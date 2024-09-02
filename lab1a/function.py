@@ -3,11 +3,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
 
-
+import sys
 import copy
 
 
-OUT_FOLDER = "./scatter_vs_lr/"
 OFFSET = 0.2
 
 #is_delta_rule = False
@@ -18,7 +17,7 @@ IN_DIM = 2
 
 #Num samples per class
 NUM_SAMPLES_PER_CLASS = 100
-CONVERGENCE_FACTOR = 0.5
+CONVERGENCE_FACTOR = 0.001
 
 
 
@@ -133,12 +132,12 @@ def generate_random_input_and_weights(in_dim, n):
     return W, X, T, X_test, T_test, color_list
 
 
-def single_layer_perceptron(W, X, T, LEARNING_RATE, color_list, training_type):
+def single_layer_perceptron(W, X, T, LEARNING_RATE, color_list, training_type, OUT_FOLDER):
 
     if training_type == "delta_training":
         plot_title = "Delta Rule Single Layer Perceptron with Learning Rate "
         filepath = "SLP_Delta_rule_lr_"
-    elif training_type == "delta_batch_training":
+    elif training_type == "batch_delta_training":
         plot_title = "Batch Delta Rule Single Layer Perceptron with Learning Rate "
         filepath = "SLP_Batch_Delta_rule_lr_"
     elif training_type == "perceptron_learning":
@@ -166,13 +165,14 @@ def single_layer_perceptron(W, X, T, LEARNING_RATE, color_list, training_type):
     
 
     #Define plotting figure
-    fig = plt.figure(figsize=(12,12))
-    ax = fig.add_subplot()
-    ax.set(xlim=(min(X[0])-OFFSET, max(X[0])+OFFSET), ylim=(min(X[1])-OFFSET, max(X[1])+OFFSET))
-    ax.set_xlabel('x0')
-    ax.set_ylabel('x1')
-    plt.title(plot_title_str)
-    artists = []
+    if "convergence" not in training_type:
+        fig = plt.figure(figsize=(12,12))
+        ax = fig.add_subplot()
+        ax.set(xlim=(min(X[0])-OFFSET, max(X[0])+OFFSET), ylim=(min(X[1])-OFFSET, max(X[1])+OFFSET))
+        ax.set_xlabel('x0')
+        ax.set_ylabel('x1')
+        plt.title(plot_title_str)
+        artists = []
     
 
     
@@ -183,18 +183,16 @@ def single_layer_perceptron(W, X, T, LEARNING_RATE, color_list, training_type):
     elif training_type == "perceptron_learning":
         W = perceptron_training(W, X, T, LEARNING_RATE, fig, ax, artists, color_list)
     elif training_type == "sequential_delta_training_convergence":
-        W, num_epochs = sequential_delta_training_until_converge(W, X, T, LEARNING_RATE, fig, ax, artists, color_list)
-        print("Artists seq", artists)
+        W, num_epochs = sequential_delta_training_until_converge(W, X, T, LEARNING_RATE, color_list)
+        #print("Artists seq", artists)
     elif training_type == "batch_delta_training_convergence":
-        W, num_epochs = batch_delta_training_until_convergence(W, X, T, LEARNING_RATE, fig, ax, artists, color_list)
-        print("Artists batch", artists)
+        W, num_epochs = batch_delta_training_until_convergence(W, X, T, LEARNING_RATE, color_list)
+        #print("Artists batch", artists)
     else:
         print("Error: Training Rule Not Found")
     
     
     
-    ani = animation.ArtistAnimation(fig=fig, artists=artists, interval=800)
-    plt.show(block=False)
     
     
     
@@ -202,41 +200,56 @@ def single_layer_perceptron(W, X, T, LEARNING_RATE, color_list, training_type):
     #Final Weights
     print("Final Weights:\n", W)
 
+    if "convergence" not in training_type:
+        ani = animation.ArtistAnimation(fig=fig, artists=artists, interval=800)
+        plt.show(block=False)
+    
 
-    f = OUT_FOLDER + filepath_str + '.gif'
-    writergif = animation.PillowWriter(fps=5)
-    ani.save(f, writer=writergif)
-
-
-    if "convergence" in training_type:
+        f = OUT_FOLDER + filepath_str + '.gif'
+        writergif = animation.PillowWriter(fps=5)
+        ani.save(f, writer=writergif)
+    else:
         return num_epochs
 
 
-def sequential_delta_training_until_converge(W, X, T, LEARNING_RATE, fig, ax, artists, color_list):
+def sequential_delta_training_until_converge(W, X, T, LEARNING_RATE, color_list):
 
     print("in seq delta training until converge")
 
     input_samples  = len(X[0,:])
-    convergence_error = CONVERGENCE_FACTOR*LEARNING_RATE
+    convergence_error = CONVERGENCE_FACTOR
 
     delta_W = np.zeros((1, IN_DIM+1))
 
     num_epochs = 0
     is_first_it = True
-    while (np.sum(delta_W) > convergence_error) or (is_first_it):
+
+    sum_delta = sys.maxsize
+
+    while np.where(abs(sum_delta) > convergence_error, True, False).all() or is_first_it:
         is_first_it = False
 
+
+        sum_delta = 0
         for i in range(input_samples):
 
             #Compute gradient
-            delta_W = LEARNING_RATE * (T[i] - np.matmul(W.T, X[:,i]))         
+            delta_W = (LEARNING_RATE * (T[i] - np.matmul(W.T, X[:,i])) * X[:,i])[:, np.newaxis]
+
+            sum_delta += delta_W
         
             #Update weights
             W += delta_W
+
+
+        print("sum_delta", sum_delta)
+        print("W", W)
+        print("convergence_error", convergence_error)
+
+        print("all(np.where(abs(delta_W) > convergence_error, True, False)) or (is_first_it))", all(np.where(abs(delta_W) > convergence_error, True, False)) or (is_first_it))
         
 
-
-        plot_scatter_line(X, W, fig, ax, artists, color_list)
+        #plot_scatter_line(X, W, fig, ax, artists, color_list)
 
         print("num_epochs", num_epochs)
         num_epochs += 1
@@ -247,23 +260,27 @@ def sequential_delta_training_until_converge(W, X, T, LEARNING_RATE, fig, ax, ar
         
 
 
-def batch_delta_training_until_convergence(W, X, T, LEARNING_RATE, fig, ax, artists, color_list):
+def batch_delta_training_until_convergence(W, X, T, LEARNING_RATE, color_list):
     input_samples  = len(X[0,:])
-    convergence_error = CONVERGENCE_FACTOR*LEARNING_RATE
+    convergence_error = CONVERGENCE_FACTOR
 
 
-    delta_W = np.zeros((1, IN_DIM+1))
+    delta_W = np.zeros((1,IN_DIM+1))
 
     num_epochs = 0
     is_first_it = True
-    while np.sum(delta_W) > convergence_error or is_first_it:
+    while abs(delta_W.all()) > convergence_error or is_first_it:
         is_first_it = False
+
+
+        
 
         #Compute gradient
         delta_W = -LEARNING_RATE * np.matmul((np.matmul(W.T, X) - T), X.T)
     
+
         #Update weights
-        W += delta_W
+        W += delta_W.T
 
         plot_scatter_line(X, W, fig, ax, artists, color_list)
 
@@ -278,16 +295,19 @@ def delta_training(W, X, T, LEARNING_RATE, fig, ax, artists, color_list):
 
     input_samples  = len(X[0,:])
 
-    delta_W = np.zeros((1, IN_DIM+1))
+    delta_W = np.zeros((IN_DIM+1, 1))
     for epoch in range(NUM_EPOCHS):
 
         for i in range(input_samples):
     
 
             #Compute gradient
-            delta_W = LEARNING_RATE * (T[i] - np.matmul(W.T, X[:,i]))    
+            delta_W = (LEARNING_RATE * (T[i] - np.matmul(W.T, X[:,i])) * X[:,i])[:, np.newaxis]
         
-        
+
+            print("delta_W", delta_W)
+            print("W", W)
+
             #Update weights
             W += delta_W
         
@@ -299,13 +319,16 @@ def delta_training(W, X, T, LEARNING_RATE, fig, ax, artists, color_list):
 
 def batch_delta_training(W, X, T, LEARNING_RATE, fig, ax, artists, color_list):
     #Trainig
+
+    delta_W = np.zeros((IN_DIM+1, 1))
+
     for i in range(NUM_EPOCHS):
     
         #Compute gradient
         delta_W = -LEARNING_RATE * np.matmul((np.matmul(W.T, X) - T), X.T)
     
         #Update weights
-        W += delta_W
+        W += delta_W.T
 
     
         plot_scatter_line(X, W, fig, ax, artists, color_list)
@@ -384,6 +407,7 @@ def plot_scatter_line(X, W, fig, ax, artists, color_list):
     ax.scatter(X[0,:], X[1,:], X[2,:], c=color_list)
 
     container = ax.plot(x0, separating_line(W, x0), c='purple')
+
 
     artists.append(container)
 

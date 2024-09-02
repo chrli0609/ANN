@@ -2,6 +2,7 @@ from function import *
 import numpy as np
 
 
+OUT_FOLDER = "./scatter_vs_lr/"
 
 
 def main():
@@ -30,14 +31,14 @@ def main():
     for lr in lr_list:
         print("Delta Rule Training with LEARNING RATE:", lr)
         
-        single_layer_perceptron(copy.deepcopy(init_W), X, T, lr, color_list, "delta_training")
+        single_layer_perceptron(copy.deepcopy(init_W), X, T, lr, color_list, "delta_training", OUT_FOLDER)
         
     print("W before perceptron", init_W)
 
     #Perceptron learning
     for lr in lr_list:
         print("Perceptron Learning with LEARNING RATE:", lr)
-        single_layer_perceptron(copy.deepcopy(init_W), X, perceptron_T, lr, color_list, "perceptron_learning")
+        single_layer_perceptron(copy.deepcopy(init_W), X, perceptron_T, lr, color_list, "perceptron_learning", OUT_FOLDER)
 
 
 

@@ -3,6 +3,8 @@ from function import *
 import matplotlib.pyplot as plt
 
 
+OUT_FOLDER = "./seq_vs_batch/"
+
 
 def main():
     np.random.seed(42)
@@ -13,26 +15,22 @@ def main():
     perceptron_T_test = np.where(T<=0, 0, 1)
 
 
-    min_lr = 0.0001
-    max_lr = 0.1
-    lr_list = np.linspace(min_lr, max_lr, int(max_lr/min_lr))
+    min_lr = 0.001
+    max_lr = 0.01
+    lr_list = np.linspace(min_lr, max_lr, 10)
 
     
     #For sequential
-    seq_epochs_to_convergence_list = []
     for lr in lr_list:
         print("in lr:", lr)
-        seq_epochs_to_convergence_list.append(single_layer_perceptron(copy.deepcopy(init_W), X, T, lr, color_list, "sequential_delta_training_convergence"))
+        single_layer_perceptron(copy.deepcopy(init_W), X, T, lr, color_list, "delta_training", OUT_FOLDER)
 
 
     #For batch
     batch_epochs_to_convergence_list = []
     for lr in lr_list:
-        batch_epochs_to_convergence_list.append(single_layer_perceptron(copy.deepcopy(init_W), X, T, lr, color_list, "batch_delta_training_convergence"))
+        single_layer_perceptron(copy.deepcopy(init_W), X, T, lr, color_list, "batch_delta_training", OUT_FOLDER)
 
-    plt.plot(seq_epochs_to_convergence_list)
-    plt.plot(batch_epochs_to_convergence_list)
-    plt.show()
 
     
 
