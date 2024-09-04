@@ -9,7 +9,13 @@ OUT_FOLDER = "./seq_vs_batch/"
 def main():
     np.random.seed(42)
 
-    init_W, X, T, X_test, T_test, color_list = generate_random_input_and_weights(IN_DIM, NUM_SAMPLES_PER_CLASS)
+    mA = [1.0, 0.5]
+    mB = [-1.0, 0.0]
+    sigmaA = 0.5
+    sigmaB = 0.5
+    
+
+    init_W, X, T, X_test, T_test, color_list = generate_random_input_and_weights(IN_DIM, NUM_SAMPLES_PER_CLASS, mA, mB, sigmaA, sigmaB)
 
     perceptron_T = np.where(T<=0, 0, 1)
     perceptron_T_test = np.where(T<=0, 0, 1)
