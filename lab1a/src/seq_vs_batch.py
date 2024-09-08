@@ -3,7 +3,7 @@ from function import *
 import matplotlib.pyplot as plt
 
 
-OUT_FOLDER = "./seq_vs_batch/"
+OUT_FOLDER = "../out/seq_vs_batch/"
 
 
 def main():

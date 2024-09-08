@@ -3,7 +3,7 @@ from function import *
 
 
 
-OUT_FOLDER = "./removed_bias_mA_-1_-0.5_mB_1_0/"
+OUT_FOLDER = "../out/removed_bias_mA_-1_-0.5_mB_1_0/"
 
 
 def main():

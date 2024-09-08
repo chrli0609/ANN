@@ -17,7 +17,7 @@ declare -a arr=("scatter_vs_lr"
 	)
 
 
-ROOT_OUT="./out_files"
+ROOT_OUT="./png_frames_of_gifs"
 
 
 #If the root folder doesnt exist, then create it
