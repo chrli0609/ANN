@@ -5,7 +5,7 @@ from torchmetrics.classification import BinaryAccuracy
 
 
 
-from model import MLP
+from model_softmax import MLP
 from functions import *
 
  ## Format data
@@ -34,15 +34,6 @@ NUM_EPOCHS = 40
 
 
 
-#define the model
-#model = MLP(2, 4, 1, LEARNING_RATE)
-
-#model.training(X, T, NUM_EPOCHS)
-
-
-
-
-
 
 
 ###########Investigate how the number of hidden nodes affect the performance###########
@@ -63,6 +54,8 @@ for hidden_nodes in hidden_nodes_list:
     final_O, final_H = model.forward_pass(X_test)
     print("final_O", final_O)
     #final_O = final_O.reshape((-1,))
+
+    print("sum row ", np.sum(final_O, axis=1))
 
     
 

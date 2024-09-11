@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torchmetrics.classification import BinaryAccuracy
+
 
 
 from model import MLP
@@ -55,13 +57,17 @@ for hidden_nodes in hidden_nodes_list:
 
     #Test on validation data
     final_O, final_H = model.forward_pass(X_test)
+    final_O = final_O.reshape((-1,))
 
 
     prediction = torch.from_numpy(final_O)
     target = torch.from_numpy(T_test)
     
+    print("pred", prediction)
+    print("target", target)
 
-    loss = nn.MSELoss()
+    #loss = nn.MSELoss()
+    loss = BinaryAccuracy()
     performance = loss(prediction, target)
 
 

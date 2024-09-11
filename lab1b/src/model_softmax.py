@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 
@@ -67,9 +68,18 @@ class MLP():
 
         print("H", H.shape)
 
-        softmax_func = nn.Softmax(self.out_dim)
+        
 
-        O = softmax_func(np.matmul(self.V.T, H_bias))
+
+        print("aeoringoperpaghaoo;apegboarhoaego;hergaeh;ogh;oaer")
+
+        #softmax_func = nn.Softmax(dim=0) 
+        no_softmax = np.matmul(self.V.T, H_bias)
+        print("no_softmax", no_softmax)
+        
+        O = F.softmax(no_softmax, dim=0)
+        print("O", O)
+       
 
         #O = activation_func(np.matmul(self.V.T, H_bias))
         
@@ -88,8 +98,9 @@ class MLP():
         hout_bias = np.concatenate((hout, np.ones((1, num_input_samples))), axis=0)
 
 
-        softmax_func = nn.Softmax(self.out_dim)
-        delta_o = np.multiply((out-targets), softmax_func(out))
+        #softmax_func = nn.Softmax(dim=0)
+        #delta_o = np.multiply((out-targets), softmax_func(out))
+        delta_o = np.multiply((out-targets), F.softmax(out, dim=0))
 
         print("V", self.V.shape)
         print("delta_o", delta_o.shape)
@@ -126,3 +137,7 @@ class MLP():
 
 
 
+def softmax(x):
+    """Compute the softmax of vector x."""
+    exps = np.exp(x)
+    return exps / np.sum(exps)

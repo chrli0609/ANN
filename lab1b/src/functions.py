@@ -230,6 +230,27 @@ def generate_random_non_linear_input_and_weights(in_dim, n, mA, mB, sigmaA, sigm
 
 
 
+
+
+def single_to_double_T(T):
+    
+    multi_T = []
+    for target in T:
+        expected_out = [None] * 2
+        if target == 1:
+            expected_out = [1, 0]
+        elif target == -1:
+            expected_out = [0, 1]
+        else:
+            print("An error has been found in Target Vector")
+
+        multi_T.append(expected_out)
+
+    multi_T_np = np.array(multi_T)
+
+    return multi_T_np.T
+
+
 def plot_data(X, color_list):
 	
 	
