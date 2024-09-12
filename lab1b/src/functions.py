@@ -23,8 +23,8 @@ def generate_color_list(T):
 
 
 
-def gen_non_lin_data(in_dim, n, mA, mB, sigmaA, sigmaB):
-    ndata = 100
+def gen_non_lin_data(in_dim, ndata, mA, mB, sigmaA, sigmaB):
+    #ndata = 100
 
     classA = np.zeros((2, ndata))
     classB = np.zeros((2, ndata))
@@ -51,9 +51,9 @@ def gen_non_lin_data(in_dim, n, mA, mB, sigmaA, sigmaB):
 
 
 def subsampling_25_from_each_class(all_data):
-    ndata = 100
+
     num_rows, num_cols = all_data.shape
-    size = int(0.75*ndata)
+    size = int(0.75*num_cols/2)
 
     classA = all_data[:, :int(num_cols/2)]
     classB = all_data[:, int(num_cols/2):]
@@ -87,9 +87,9 @@ def subsampling_25_from_each_class(all_data):
 
 
 def subsampling_50_from_classA(all_data):
-    ndata = 100
+
     num_rows, num_cols = all_data.shape
-    size = int(0.75*ndata)
+    size = int(0.75*num_cols/2)
 
     classA = all_data[:, :int(num_cols/2)]
     classB = all_data[:, int(num_cols/2):]
@@ -99,10 +99,6 @@ def subsampling_50_from_classA(all_data):
     
     train_A = classA[:,:size]
     test_A = classA[:,size:]
-    print("A",train_A.shape)
-    print("B",train_B.shape)
-    print("A",train_A.shape)
-    print("B",train_B.shape)
     
 
     data_train = np.concatenate((train_A, classB), axis=1)
@@ -127,10 +123,9 @@ def subsampling_50_from_classA(all_data):
 def subsampling_point_2_lt_0_and_point_8_gt_0_from_A(all_data):
 
 
-    ndata = 100
     num_rows, num_cols = all_data.shape
-    size_group1 = int(0.8*ndata)
-    size_group2 = int(0.2*ndata)
+    size_group1 = int(0.8*num_cols/2)
+    size_group2 = int(0.2*num_cols/2)
 
     classA = all_data[:, :int(num_cols/2)]
     classB = all_data[:, int(num_cols/2):]
@@ -249,6 +244,44 @@ def single_to_double_T(T):
     multi_T_np = np.array(multi_T)
 
     return multi_T_np.T
+
+
+
+
+def max_of_col(O):
+    _, num_cols = O.shape
+
+    new_O = []
+    for i in range(num_cols):
+        each_row = [None] * 2
+        if O[0][i] > O[1][i]:
+             each_row[0] = 1
+             each_row[1] = 0
+        else:
+            each_row[0] = 0
+            each_row[1] = 1
+        new_O.append(each_row)
+
+    return np.array(new_O).T
+
+
+def sign(num):
+    return -1 if num < 0 else 1
+
+def accuracy_score(O, T):
+
+    correct = 0
+    incorrect = 0
+    for i in range(len(O)):
+        if sign(O[i]) == sign(T[i]):
+            correct += 1
+        else:
+            incorrect += 1
+    
+    return correct / (correct + incorrect)
+            
+
+
 
 
 def plot_data(X, color_list):

@@ -27,8 +27,8 @@ T_test = single_to_double_T(T_test)
 
 #Input data size
 IN_DIM, num_input_samples = X.shape
-LEARNING_RATE = 0.0001
-NUM_EPOCHS = 40
+LEARNING_RATE = 0.001
+NUM_EPOCHS = 20
 
 #plot_data(X, color_list)
 
@@ -52,10 +52,12 @@ for hidden_nodes in hidden_nodes_list:
 
     #Test on validation data
     final_O, final_H = model.forward_pass(X_test)
+
+    final_O = max_of_col(final_O)
     print("final_O", final_O)
     #final_O = final_O.reshape((-1,))
 
-    print("sum row ", np.sum(final_O, axis=1))
+    
 
     
 
@@ -69,10 +71,10 @@ for hidden_nodes in hidden_nodes_list:
 
 
     loss_mse = nn.MSELoss()
-    loss_acc = BinaryAccuracy()
 
     performance_mse = loss_mse(prediction, target)
-    performance_acc = loss_acc(prediction, target)
+    performance_acc = accuracy_score(prediction, target)
+    print("performance_acc", accuracy_score)
 
 
     performance_mse_list.append(performance_mse)

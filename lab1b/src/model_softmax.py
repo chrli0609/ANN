@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -77,7 +78,10 @@ class MLP():
         no_softmax = np.matmul(self.V.T, H_bias)
         print("no_softmax", no_softmax)
         
-        O = F.softmax(no_softmax, dim=0)
+        O = F.softmax(torch.tensor(no_softmax), dim=0)
+        O = O.numpy()
+
+
         print("O", O)
        
 
@@ -100,8 +104,8 @@ class MLP():
 
         #softmax_func = nn.Softmax(dim=0)
         #delta_o = np.multiply((out-targets), softmax_func(out))
-        delta_o = np.multiply((out-targets), F.softmax(out, dim=0))
-
+        delta_o = np.multiply((out-targets), F.softmax(torch.tensor(out), dim=0))
+        delta_o = delta_o.numpy()
         print("V", self.V.shape)
         print("delta_o", delta_o.shape)
         
@@ -119,7 +123,7 @@ class MLP():
         _, num_input_samples = X.shape
 
         print("delta_h", delta_h.shape)
-        print("X", X.shape)
+        print("X", X.shape) 
         print("self.eta", self.eta)
         print("delta_o", delta_o.shape)
         print("H", H.shape)
