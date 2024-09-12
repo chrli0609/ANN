@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import PolyCollection
-
+from matplotlib.animation import FuncAnimation
 
 
 IN_DIM = 2
@@ -335,4 +335,69 @@ def three_d_plot(my_vec):
         xlabel='Epoch Number', ylabel=r'Number of Neurons in Hidden Layer', zlabel='Mean Squared Error')
 
     plt.show()
+
+def animate_train_valid_error(train_error_hidden_nodes_list, valid_error_hidden_nodes_list):
+	num_epochs = len(train_error_hidden_nodes_list[0])
+
+	hidden_nodes_list = np.arange(1, len(train_error_hidden_nodes_list) + 1, 1)
+
+
+	# Create the figure and axis
+	fig, ax = plt.subplots(figsize=(10, 6))
+
+
+	# Initialize lines for training and validation error
+	train_line, = ax.plot([], [], label='Training Error', color='blue')
+	val_line, = ax.plot([], [], label='Validation Error', color='red')
+
+
+	# Set axis limits
+	ax.set_xlim(1, num_epochs)
+	ax.set_ylim(0, 2)  # Adjust based on your error scale
+	ax.set_xlabel('Epochs')
+	ax.set_ylabel('Error')
+	ax.set_title('Training and Validation Errors Across Epochs')
+	ax.legend()
+
+	#Add grid
+	ax.grid(True)
+
+	# Create text annotation for neuron count
+	neuron_text = ax.text(0.8, 0.9, '', transform=ax.transAxes, fontsize=12, color='black',
+		bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
+
+	# Create the animation
+	ani = FuncAnimation(fig, update, frames=len(hidden_nodes_list), init_func=init, blit=True, interval=300)
+
+	# Show the animation
+	plt.show()
+
+
+# Function to initialize the plot
+def init():
+
+
+
+    train_line.set_data([], [])
+    val_line.set_data([], [])
+    neuron_text.set_text('')
+    return train_line, val_line, neuron_text
+
+# Function to update the plot for each frame in the animation
+def update(frame):
+    neurons = hidden_nodes_list[frame]  # Current number of neurons
+
+    # Update training and validation lines with the corresponding errors
+    train_line.set_data(np.arange(1, NUM_EPOCHS + 1), train_error_hidden_nodes_list[frame])
+    val_line.set_data(np.arange(1, NUM_EPOCHS + 1), valid_error_hidden_nodes_list[frame])
+    
+    # Update the title to reflect the current neuron count
+    ax.set_title(f'Training and Validation Errors for {neurons} Neurons')
+
+    # Update the neuron count text annotation
+    neuron_text.set_text(f'Neurons: {neurons}')
+
+    return train_line, val_line, neuron_text
+
+
 

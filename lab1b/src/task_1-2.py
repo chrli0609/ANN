@@ -75,8 +75,8 @@ print("train_error_hidden_nodes_list", train_error_hidden_nodes_list)
 
 
 
-three_d_plot(train_error_hidden_nodes_list)
-
+#three_d_plot(train_error_hidden_nodes_list)
+animate_train_valid_error(train_error_hidden_nodes_list, valid_error_hidden_nodes_list)
 
 
 
