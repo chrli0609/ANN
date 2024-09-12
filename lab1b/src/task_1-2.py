@@ -75,6 +75,7 @@ print("train_error_hidden_nodes_list", train_error_hidden_nodes_list)
 
 
 
+three_d_plot(train_error_hidden_nodes_list)
 
 
 
@@ -90,38 +91,4 @@ print("train_error_hidden_nodes_list", train_error_hidden_nodes_list)
 
 
 
-from mpl_toolkits.mplot3d.art3d import PolyCollection
 
-def polygon_under_graph(x, y):
-    """
-    Construct the vertex list which defines the polygon filling the space under
-    the (x, y) line graph. This assumes x is in ascending order.
-    """
-    return [(x[0], 0.), *zip(x, y), (x[-1], 0.)]
-
-ax = plt.figure().add_subplot(projection='3d')
-
-# x corresponds to 64 points along the x-axis
-x = np.linspace(0., 10., 64)
-
-# Assume my_vec is of shape (64, 20), with 64 x-points and 20 lambda values
-my_vec = np.random.rand(64, 20)  # You can replace this with your actual data
-
-# verts[i] is a list of (x, y) pairs for each lambda value.
-verts = [polygon_under_graph(x, my_vec[:, i]) for i in range(my_vec.shape[1])]
-
-# Using 20 lambda values (lambdas = range(1, 21)) since my_vec has 20 columns
-lambdas = range(1, 21)
-
-# Define facecolors
-facecolors = plt.colormaps['viridis_r'](np.linspace(0, 1, len(verts)))
-
-# Create the PolyCollection object
-poly = PolyCollection(verts, facecolors=facecolors, alpha=.7)
-ax.add_collection3d(poly, zs=lambdas, zdir='y')
-
-# Set limits and labels
-ax.set(xlim=(0, 10), ylim=(1, 21), zlim=(0, 1),  # Adjust zlim based on data range
-       xlabel='x', ylabel=r'$\lambda$', zlabel='probability')
-
-plt.show()

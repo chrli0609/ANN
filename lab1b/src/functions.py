@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import PolyCollection
 
 
 
@@ -292,4 +293,46 @@ def plot_data(X, color_list):
 
 
 
+def polygon_under_graph(x, y):
+    """
+    Construct the vertex list which defines the polygon filling the space under
+    the (x, y) line graph. This assumes x is in ascending order.
+    """
+    return [(x[0], 0.), *zip(x, y), (x[-1], 0.)]
+
+def three_d_plot(my_vec):
+    # Parameterized dimensions of my_vec
+    num_x_points = 64  # Number of points along the x-axis
+    num_lambdas = 20   # Number of lambda values (or "slices" in y)
+
+    # Set up the figure and 3D axis
+    ax = plt.figure().add_subplot(projection='3d')
+
+    # Generate x values based on the number of points
+    x = np.linspace(0., num_x_points, num_x_points)
+
+    # Assume my_vec is of shape (num_x_points, num_lambdas)
+    #my_vec = np.random.rand(num_x_points, num_lambdas)  # Replace with actual data if available
+
+    my_vec = np.array(my_vec)
+
+    # verts[i] is a list of (x, y) pairs for each lambda value
+    verts = [polygon_under_graph(x, my_vec[:, i]) for i in range(num_lambdas)]
+
+    # Using lambda values corresponding to the number of lambdas
+    lambdas = range(1, num_lambdas + 1)
+
+    # Define facecolors
+    facecolors = plt.colormaps['viridis_r'](np.linspace(0, 1, len(verts)))
+
+    # Create the PolyCollection object
+    poly = PolyCollection(verts, facecolors=facecolors, alpha=1.0)  # Opaque polygons
+
+    ax.add_collection3d(poly, zs=lambdas, zdir='y')
+
+    # Set limits and labels (adjust zlim based on data range)
+    ax.set(xlim=(0, num_x_points), ylim=(1, num_lambdas + 1), zlim=(0, 5),
+        xlabel='Epoch Number', ylabel=r'Number of Neurons in Hidden Layer', zlabel='Mean Squared Error')
+
+    plt.show()
 
