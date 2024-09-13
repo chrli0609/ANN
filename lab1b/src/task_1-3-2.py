@@ -73,7 +73,7 @@ def update(frame):
     ax2.set_xlim([-5, 5])
     ax2.set_ylim([-5, 5])
     ax2.set_zlim([-0.7, 0.7])
-    ax2.set_title(f'Model with {nsamp} Samples of 441')
+    ax2.set_title(f'Model trained with {nsamp} of 441 Samples ({round(nsamp/441*100,2)}%)')
     
     return ax2,
 

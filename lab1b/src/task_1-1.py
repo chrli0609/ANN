@@ -10,6 +10,7 @@ from functions import *
 
  ## Format data
 NUM_SAMPLES_PER_CLASS = 134
+IN_DIM = 2
 
 mA = np.array([1.0, 0.3])
 sigmaA = 0.2
@@ -20,7 +21,7 @@ sigmaB = 0.3
 #subsampling_25_from_each_class
 #subsampling_50_from_classA
 #subsampling_point_2_lt_0_and_point_8_gt_0_from_A
-init_W, X, T, X_test, T_test, color_list = generate_random_non_linear_input_and_weights(IN_DIM, NUM_SAMPLES_PER_CLASS, mA, mB, sigmaA, sigmaB, subsampling_25_from_each_class)
+init_W, X, T, X_test, T_test, color_list, color_list_test = generate_random_non_linear_input_and_weights(IN_DIM, NUM_SAMPLES_PER_CLASS, mA, mB, sigmaA, sigmaB, subsampling_25_from_each_class)
 
 
 
@@ -28,9 +29,9 @@ init_W, X, T, X_test, T_test, color_list = generate_random_non_linear_input_and_
 IN_DIM, num_input_samples = X.shape
 LEARNING_RATE = 0.01
 NUM_EPOCHS = 20
-MAX_HIDDEN_NODES_TO_TRY = 65
+MAX_HIDDEN_NODES_TO_TRY = 55
 
-plot_data(X, color_list)
+#plot_data(X, color_list, X_test, color_list_test)
 
 
 
@@ -86,13 +87,19 @@ print("performance_acc_list", performance_acc_list)
 
 
 fig, ax = plt.subplots(nrows=2, ncols=1)
+fig.suptitle('Classification performance vs Number of neurons in hidden layer')
+
 
 plt.subplot(2, 1, 1)
-plt.plot(hidden_nodes_list, performance_mse_list, label="MSELoss")
+plt.plot(hidden_nodes_list, performance_mse_list, c='orange', label="MSELoss")
+plt.xlabel("Number of Neurons in hidden layer")
+plt.ylabel('Error')
 plt.legend(loc="upper right")
 
 plt.subplot(2, 1, 2)
-plt.plot(hidden_nodes_list, performance_acc_list, label="Accuracy Score")
+plt.plot(hidden_nodes_list, performance_acc_list, c='blue', label="Accuracy Score")
+plt.xlabel("Number of Neurons in hidden layer")
+plt.ylabel('% accuracy')
 plt.legend(loc="upper right")
 plt.show()
 

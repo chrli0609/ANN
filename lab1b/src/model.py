@@ -24,6 +24,8 @@ class MLP():
         self.eta = LEARNING_RATE
 
 
+
+    #Batch Backpropogation
     def training(self, X, T, NUM_EPOCHS):
         for epoch in range(NUM_EPOCHS):
             O, H = self.forward_pass(X)
@@ -35,6 +37,22 @@ class MLP():
 
 
 
+########################## NOT COMPLETEEEEEE ##############################################
+    #Sequential Backpropogation
+    def training_sequential(self, X, T, NUM_EPOCHS):
+        for epoch in range(NUM_EPOCHS):
+            O, H = self.forward_pass(X)
+
+
+            delta_o, delta_h = self.backward_pass(X, O, H, T)
+
+            self.weight_update(X, H, delta_o, delta_h)
+
+########################## NOT COMPLETEEEEEE ##############################################
+
+
+
+    #Batch Backpropogation while keeping track of validation error
     def training_w_valid(self, X, T, X_test, T_test, NUM_EPOCHS):
         valid_error_list = []
         train_error_list = []

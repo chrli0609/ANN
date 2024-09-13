@@ -7,7 +7,7 @@ from model import MLP
 from functions import *
 
 #Output folder
-OUT_FOLDER = "./out/task_1-2/"
+OUT_FOLDER = "../out/task_1-2/"
 
 # Data and parameters
 NUM_SAMPLES_PER_CLASS = 100
