@@ -4,9 +4,6 @@ from mpl_toolkits.mplot3d.art3d import PolyCollection
 from matplotlib.animation import FuncAnimation
 
 
-IN_DIM = 2
-NUM_SAMPLES_PER_CLASS = 100
-
 def generate_color_list(T):
 
     
@@ -208,6 +205,7 @@ def generate_random_non_linear_input_and_weights(in_dim, n, mA, mB, sigmaA, sigm
 
     #Generate color list
     color_list = generate_color_list(T)
+    color_list_test = generate_color_list(T_test)
     
     
     #Add extra row at bottom for bias
@@ -221,7 +219,7 @@ def generate_random_non_linear_input_and_weights(in_dim, n, mA, mB, sigmaA, sigm
     print("T_test:", T_test.shape)
     
 
-    return W, X, T, X_test, T_test, color_list
+    return W, X, T, X_test, T_test, color_list, color_list_test
 
 
 
@@ -285,10 +283,19 @@ def accuracy_score(O, T):
 
 
 
-def plot_data(X, color_list):
-	
-	
-	plt.scatter(X[0,:], X[1,:], c=color_list)
+def plot_data(X, color_list, X_test, color_list_test):
+
+	fig, ax = plt.subplots(nrows=2, ncols=1)
+
+
+	plt.subplot(2, 1, 1)
+	plt.scatter(X[0,:], X[1,:], c=color_list, label="Training data")
+	plt.legend(loc="upper right")
+
+	plt.subplot(2, 1, 2)
+	plt.scatter(X_test[0,:], X_test[1,:], c=color_list_test, label="Validation data")
+	plt.legend(loc="upper right")
+
 	plt.show()
 
 
@@ -340,10 +347,11 @@ def three_d_plot(my_vec):
 
 
 # Animation function
-def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_error_hidden_nodes_list, valid_error_hidden_nodes_list):
+def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_error_hidden_nodes_list, valid_error_hidden_nodes_list, subsampling_method, LEARNING_RATE, OUT_FOLDER):
     # Convert errors to arrays for easy indexing
     train_error_hidden_nodes_list = np.array(train_error_hidden_nodes_list)
     valid_error_hidden_nodes_list = np.array(valid_error_hidden_nodes_list)
+
 
 
     # Create the figure and axis
@@ -358,7 +366,8 @@ def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_erro
     ax.set_ylim(0, 2)  # Adjust based on your error scale
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Error')
-    ax.set_title('Training and Validation Errors Across Epochs')
+    title_str = subsampling_method.__name__ + '\nTraining and Validation Errors Across Epochs'
+    ax.set_title(title_str)
     ax.legend()
 
     # Add grid
@@ -388,15 +397,34 @@ def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_erro
         val_line.set_data(np.arange(1, num_epochs + 1), valid_error_hidden_nodes_list[frame])
 
         # Update the title to reflect the current neuron count
-        ax.set_title(f'Training and Validation Errors for {neurons} Neurons')
+        ax.set_title(subsampling_method.__name__ + f'\nTraining and Validation Errors with $\eta$: '+str(LEARNING_RATE))
 
         # Update the neuron count text annotation
         neuron_text.set_text(f'Neurons: {neurons}')
 
         return train_line, val_line, neuron_text
 
-    # Create the animation
+     # Create the animation
     ani = FuncAnimation(fig, update, frames=len(hidden_nodes_list), init_func=init, blit=True, interval=600)
+
+    # Save the animation as a gif
+    ani.save(OUT_FOLDER + subsampling_method.__name__ + '_error.gif', writer='pillow')
+    """def save_gifs():
+        for i in range(len(train_error_hidden_nodes_list)):
+            train_artists.append(train_container)
+            valid_artists.append(valid_container)
+
+        ani = animation.ArtistAnimation(fig=fig, artists=artists, interval=600)
+        plt.show(block=False)
+        f = OUT_FOLDER + filepath_str + '.gif'
+        writergif = animation.PillowWriter(fps=5)
+        ani.save(f, writer=writergif)"""
+
+
+    # Create the animation
+    #ani = FuncAnimation(fig, update, frames=len(hidden_nodes_list), init_func=init, blit=True, interval=600)
 
     # Show the animation
     plt.show()
+
+

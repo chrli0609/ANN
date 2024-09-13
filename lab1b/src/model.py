@@ -87,10 +87,12 @@ class MLP():
         #Append X with one row of ones for bias
         X_bias = np.concatenate((X, np.ones((1, num_input_samples))), axis=0)
 
+
         H = activation_func(np.matmul(self.W.T, X_bias))
 
         #Append H with one row of ones for bias
         H_bias = np.concatenate((H, np.ones((1, num_input_samples))), axis=0)
+
 
         O = activation_func(np.matmul(self.V.T, H_bias))
         
