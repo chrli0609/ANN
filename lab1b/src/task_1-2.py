@@ -6,6 +6,10 @@ from matplotlib.animation import FuncAnimation
 from model import MLP
 from functions import *
 
+np.random.seed(2345)
+
+
+
 #Output folder
 OUT_FOLDER = "../out/task_1-2/"
 
@@ -18,15 +22,15 @@ sigmaB = 0.3
 
 # Generate random data
 IN_DIM = 2
-NUM_EPOCHS = 40
-LEARNING_RATE = 0.01
+NUM_EPOCHS = 80
+LEARNING_RATE = 0.001
 MAX_HIDDEN_NODES_TO_TRY = 50
 
 
 ###### CHOOSE SUBSAMPLING METHOD #####
 #subsampling_method = subsampling_25_from_each_class
-#subsampling_method = subsampling_50_from_classA
-subsampling_method = subsampling_point_2_lt_0_and_point_8_gt_0_from_A
+subsampling_method = subsampling_50_from_classA
+#subsampling_method = subsampling_point_2_lt_0_and_point_8_gt_0_from_A
 
 # Generate data and weights
 init_W, X, T, X_test, T_test, color_list, color_list_test = generate_random_non_linear_input_and_weights(
