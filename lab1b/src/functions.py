@@ -347,7 +347,7 @@ def three_d_plot(my_vec):
 
 
 # Animation function
-def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_error_hidden_nodes_list, valid_error_hidden_nodes_list, subsampling_method, LEARNING_RATE, OUT_FOLDER):
+def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_error_hidden_nodes_list, valid_error_hidden_nodes_list, subsampling_method, is_batch_learning, LEARNING_RATE, OUT_FOLDER):
     # Convert errors to arrays for easy indexing
     train_error_hidden_nodes_list = np.array(train_error_hidden_nodes_list)
     valid_error_hidden_nodes_list = np.array(valid_error_hidden_nodes_list)
@@ -397,7 +397,12 @@ def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_erro
         val_line.set_data(np.arange(1, num_epochs + 1), valid_error_hidden_nodes_list[frame])
 
         # Update the title to reflect the current neuron count
-        ax.set_title(subsampling_method.__name__ + f'\nTraining and Validation Errors with $\eta$: '+str(LEARNING_RATE))
+        if is_batch_learning:
+            training_name = "Batch Gradient Descent\n"
+        else:
+            training_name = "Sequential Gradient Descent\n"
+
+        ax.set_title(training_name + subsampling_method.__name__ + f'\nTraining and Validation Errors with $\eta$: '+str(LEARNING_RATE))
 
         # Update the neuron count text annotation
         neuron_text.set_text(f'Neurons: {neurons}')
@@ -408,17 +413,14 @@ def animate_training_validation_errors(num_epochs, hidden_nodes_list, train_erro
     ani = FuncAnimation(fig, update, frames=len(hidden_nodes_list), init_func=init, blit=True, interval=600)
 
     # Save the animation as a gif
-    ani.save(OUT_FOLDER + subsampling_method.__name__ + '_error.gif', writer='pillow')
-    """def save_gifs():
-        for i in range(len(train_error_hidden_nodes_list)):
-            train_artists.append(train_container)
-            valid_artists.append(valid_container)
 
-        ani = animation.ArtistAnimation(fig=fig, artists=artists, interval=600)
-        plt.show(block=False)
-        f = OUT_FOLDER + filepath_str + '.gif'
-        writergif = animation.PillowWriter(fps=5)
-        ani.save(f, writer=writergif)"""
+    if is_batch_learning:
+        gif_name_str = OUT_FOLDER + "batch_" + subsampling_method.__name__ + '_error.gif'
+    else:
+        gif_name_str = OUT_FOLDER + "seq_" + subsampling_method.__name__ + '_error.gif'
+
+    ani.save(gif_name_str, writer='pillow')
+
 
 
     # Create the animation

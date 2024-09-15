@@ -22,15 +22,18 @@ sigmaB = 0.3
 
 # Generate random data
 IN_DIM = 2
-NUM_EPOCHS = 80
+NUM_EPOCHS = 60
 LEARNING_RATE = 0.001
 MAX_HIDDEN_NODES_TO_TRY = 50
 
 
 ###### CHOOSE SUBSAMPLING METHOD #####
-#subsampling_method = subsampling_25_from_each_class
-subsampling_method = subsampling_50_from_classA
+subsampling_method = subsampling_25_from_each_class
+#subsampling_method = subsampling_50_from_classA
 #subsampling_method = subsampling_point_2_lt_0_and_point_8_gt_0_from_A
+
+##### CHOOSE BATCH OR SEQUENTIAL GRADIENT DESCENT #####
+is_batch_learning = True
 
 # Generate data and weights
 init_W, X, T, X_test, T_test, color_list, color_list_test = generate_random_non_linear_input_and_weights(
@@ -59,15 +62,17 @@ valid_error_hidden_nodes_list = []
 # Train and record errors for each neuron configuration
 for hidden_nodes in hidden_nodes_list:
     model = MLP(IN_DIM, hidden_nodes, 1, LEARNING_RATE)
-    #train_error, valid_error = model.training_w_valid(X, T, X_test, T_test, NUM_EPOCHS)
-    train_error, valid_error = model.training_sequential_w_valid(X, T, X_test, T_test, NUM_EPOCHS)
+    if is_batch_learning:
+        train_error, valid_error = model.training_w_valid(X, T, X_test, T_test, NUM_EPOCHS)
+    else:
+        train_error, valid_error = model.training_sequential_w_valid(X, T, X_test, T_test, NUM_EPOCHS)
     train_error_hidden_nodes_list.append(train_error)
     valid_error_hidden_nodes_list.append(valid_error)
 
 
 
-print("train_error_hidden_nodes_list", train_error_hidden_nodes_list)
-print("valid_error_hidden_nodes_list", valid_error_hidden_nodes_list)
+#print("train_error_hidden_nodes_list", train_error_hidden_nodes_list)
+#print("valid_error_hidden_nodes_list", valid_error_hidden_nodes_list)
 
 
 
@@ -77,6 +82,7 @@ animate_training_validation_errors(NUM_EPOCHS,
                                 train_error_hidden_nodes_list,
                                 valid_error_hidden_nodes_list,
                                 subsampling_method,
+                                is_batch_learning,
                                 LEARNING_RATE,
                                 OUT_FOLDER
                                 )

@@ -72,6 +72,8 @@ class MLP():
             valid_mse_loss = np.mean((o_valid - T_test)**2)  # Mean Squared Error for validation set
             valid_error_list.append(valid_mse_loss)
 
+            print(f"Epoch: {epoch}\tTraining Error: {train_mse_loss},\tValidation Error: {valid_mse_loss}")
+
         return train_error_list, valid_error_list
 
 
@@ -105,6 +107,9 @@ class MLP():
             O_valid_tensor = torch.tensor(O_valid)
             T_test_tensor = torch.tensor(T_test)
             valid_error_list.append(mse_loss(O_valid_tensor, T_test_tensor).tolist())
+
+
+            print(f"Epoch: {epoch}\tTraining Error: {train_error_list[-1]},\tValidation Error: {valid_error_list[-1]}")
 
         
 
