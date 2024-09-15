@@ -118,15 +118,19 @@ class MLP(nn.Module):
                         break
 
             #print loss
-            print("Epoch", epoch, "\t: training loss =", train_loss.item(), "\t: validation loss =", val_loss.item())
+            #print("Epoch", epoch, "\t: training loss =", train_loss.item(), "\t: validation loss =", val_loss.item())
 
             train_loss_list.append(train_loss.item())
             valid_loss_list.append(val_loss.item())
     
 
+        print("Finished training\tfinal training error:", train_loss_list[-1], "\tfinal validation error:", valid_loss_list[-1])
+
+
         #If no early_Stopping --> just take the last sample as best
         if not early_stopping:
-            best_model_weights = copy.deepcopy(self.state_dict()) 
+            best_model_weights = copy.deepcopy(self.state_dict())
+        
 
         return best_model_weights, train_loss_list, valid_loss_list
 
@@ -277,6 +281,7 @@ class Dataset:
 
 
 def main(LAYER_SIZES, LEARNING_RATE, WEIGHT_DECAY, ax1, ax2):
+    #NUM_RUNS = 10
     NUM_EPOCHS = 100
     layer_sizes = LAYER_SIZES
     ZERO_MEAN = True
@@ -295,31 +300,68 @@ def main(LAYER_SIZES, LEARNING_RATE, WEIGHT_DECAY, ax1, ax2):
     num_samples, input_size = X_in.shape
     _, output_size = X_out.shape
 
-    if ZERO_MEAN:
-        X_in += np.random.normal(0, 0.05, (num_samples, input_size))
-        X_out += np.random.normal(0, 0.05, (n_samples, output_size))
+    np.random.seed(23)
 
-    input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples_no_shuffle_test(X_in, X_out, valid_dist, n_samples)
+    run_list_train_loss = []
+    run_list_valid_loss = []
+    predicted_outputs_list = []
+    X_out_list = []
+    for i in range(NUM_RUNS):
+        
 
-    model = MLP(input_size=input_size, layer_sizes=layer_sizes, output_size=output_size)
+        if ZERO_MEAN:
+            X_in_run = X_in + np.random.normal(0, 0.05, (num_samples, input_size))
+            X_out_run = X_out + np.random.normal(0, 0.05, (n_samples, output_size))
 
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+        #input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples_no_shuffle_test(X_in, X_out, valid_dist, n_samples)
+        input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples(X_in_run, X_out_run, valid_dist, n_samples)
 
-    best_model_weights, train_loss_list, valid_loss_list = model.train_and_validate(input_training, output_training, input_validation, output_validation, NUM_EPOCHS, criterion, optimizer, early_stopping=EARLY_STOPPING)
+    
+        model = MLP(input_size=input_size, layer_sizes=layer_sizes, output_size=output_size)
+
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+
+        best_model_weights, train_loss_list, valid_loss_list = model.train_and_validate(input_training, output_training, input_validation, output_validation, NUM_EPOCHS, criterion, optimizer, early_stopping=EARLY_STOPPING)
+
+
+        #Append losses to list for calculating mean of them
+        run_list_train_loss.append(train_loss_list)
+        run_list_valid_loss.append(valid_loss_list)
+
+        predicted_outputs_list.append(model(torch.tensor(X_in_run).double()).detach().numpy())
+        X_out_list.append(X_out_run)
+    
+
+
+    #Find mean training and validation error between runs
+    mean_train_loss_list = np.mean(run_list_train_loss, axis=0)
+    mean_valid_loss_list = np.mean(run_list_valid_loss, axis=0)
+
+    #Find mean predicted outputs for each run
+    mean_predicted_outputs_list = np.mean(predicted_outputs_list, axis=0)
+    mean_X_out_list = np.mean(X_out_list, axis=0)
+    
+
+
+
+    #print("run_list_train_loss", run_list_train_loss)
+    #print("run_list_valid_loss", run_list_valid_loss)
+    #print("mean_train_loss_list", mean_train_loss_list)
+    #print("mean_valid_loss_list", mean_valid_loss_list)
+        
 
     # Plot training and validation loss
-    ax1.plot(train_loss_list, label='Training Error', color='blue')
-    ax1.plot(valid_loss_list, label='Validation Error', color='red')
+    ax1.plot(mean_train_loss_list, label='Training Error', color='blue')
+    ax1.plot(mean_valid_loss_list, label='Validation Error', color='red')
     ax1.set_title(f"Nodes ({LAYER_SIZES})\nLoss Curve LR={LEARNING_RATE}\nmin(E_val)={round(min(valid_loss_list),3)}")
     ax1.set_xlabel("Epoch")
     ax1.set_ylabel("Loss")
     ax1.legend(loc="upper right")
 
     # Plot predicted vs actual outputs
-    ax2.plot(X_out, label='Actual', color='green')
-    predicted_outputs = model(torch.tensor(X_in).double()).detach().numpy()
-    ax2.plot(predicted_outputs, label='Predicted', color='orange')
+    ax2.plot(mean_X_out_list, label='Actual', color='green')
+    ax2.plot(mean_predicted_outputs_list, label='Predicted', color='orange')
     ax2.set_title("Actual vs Predicted")
     ax2.set_xlabel("Sample")
     ax2.set_ylabel("Output")
@@ -327,6 +369,7 @@ def main(LAYER_SIZES, LEARNING_RATE, WEIGHT_DECAY, ax1, ax2):
 
 
 # Define the parameter list (layer sizes and learning rates)
+NUM_RUNS = 10
 param_list = [
     [[3, 2], 0.01],
     [[4, 4], 0.01],
@@ -353,7 +396,7 @@ def update_plot(frame):
         ax1, ax2 = axes[i]
         main(params[0], params[1], weight_decay, ax1, ax2)
 
-    fig.suptitle(f"Weight Decay = {weight_decay:.1e}")
+    fig.suptitle(f"Average over {NUM_RUNS} runs\nWeight Decay = {weight_decay:.1e}")
 
 # Set up the figure and axes for animation
 fig = plt.figure(figsize=(18, 10))
@@ -362,7 +405,8 @@ fig = plt.figure(figsize=(18, 10))
 total_frames = len(weight_decay_values)
 
 # Create the animation
-anim = FuncAnimation(fig, update_plot, frames=total_frames, i repeat=False)
+anim = FuncAnimation(fig, update_plot, frames=total_frames, interval=400, repeat=False)
 
 # Save the animation as a GIF
 anim.save('../out/all_models_weight_decay_animation.gif', writer='pillow')
+
