@@ -36,19 +36,44 @@ class MLP():
             self.weight_update(X, H, delta_o, delta_h)
 
 
+    #Sequential gradient descent while keeping track of erro
+    def training_sequential_w_valid(self, X, T, X_test, T_test, NUM_EPOCHS):
+        train_error_list = []
+        valid_error_list = []
 
-########################## NOT COMPLETEEEEEE ##############################################
-    #Sequential Backpropogation
-    def training_sequential(self, X, T, NUM_EPOCHS):
+        num_samples = X.shape[1]  # Number of samples
+
         for epoch in range(NUM_EPOCHS):
-            O, H = self.forward_pass(X)
+            # Shuffle the data at the start of each epoch
+            indices = np.random.permutation(num_samples)
+            X_shuffled = X[:, indices]
+            T_shuffled = T[indices]
 
+            for i in range(num_samples):  # Loop over each training sample sequentially
+                x_sample = X_shuffled[:, i:i+1]  # Input vector of size (in_dim, 1)
+                t_sample = T_shuffled[i:i+1]  # Target vector of size (out_dim, 1)
 
-            delta_o, delta_h = self.backward_pass(X, O, H, T)
+                # Forward pass for this single sample
+                o_sample, h_sample = self.forward_pass(x_sample)    
 
-            self.weight_update(X, H, delta_o, delta_h)
+                # Backward pass for this single sample
+                delta_o_sample, delta_h_sample = self.backward_pass(x_sample, o_sample, h_sample, t_sample) 
 
-########################## NOT COMPLETEEEEEE ##############################################
+                # Update weights based on this sample
+                self.weight_update(x_sample, h_sample, delta_o_sample, delta_h_sample)  
+
+            # After processing all training samples for this epoch, compute training error
+            o_train, _ = self.forward_pass(X)
+            train_mse_loss = np.mean((o_train - T)**2)  # Mean Squared Error for training set
+            train_error_list.append(train_mse_loss) 
+
+            # Compute validation error
+            o_valid, _ = self.forward_pass(X_test)
+            valid_mse_loss = np.mean((o_valid - T_test)**2)  # Mean Squared Error for validation set
+            valid_error_list.append(valid_mse_loss)
+
+        return train_error_list, valid_error_list
+
 
 
 
