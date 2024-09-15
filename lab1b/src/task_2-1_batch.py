@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
+import copy
 
 class MLP(nn.Module):
     def __init__(self, input_size, layer_sizes, output_size):
@@ -51,6 +52,10 @@ class MLP(nn.Module):
         train_loss_list = []
         valid_loss_list = []
 
+        best_loss = float('inf')
+        best_model_weights = None
+        patience = 10
+
         for epoch in range(num_epochs):
             self.train()  # Set the model to training mode
             epoch_train_loss = 0
@@ -72,9 +77,7 @@ class MLP(nn.Module):
 
                 epoch_train_loss += loss.item()
 
-            # Compute average training loss for the epoch
-            avg_train_loss = epoch_train_loss / len(train_loader)
-            train_loss_list.append(avg_train_loss)
+  
 
             # Validation
             self.eval()  # Set the model to evaluation mode
@@ -85,6 +88,21 @@ class MLP(nn.Module):
                     val_outputs = self.forward(val_inputs)
                     val_loss = criterion(val_outputs, val_targets)
                     epoch_valid_loss += val_loss.item()
+            #Early stopping
+            if val_loss < best_loss:
+                best_loss = val_loss
+                best_model_weights = copy.deepcopy(self.state_dict())  # Deep copy here      
+                patience = 10  # Reset patience counter
+            else:
+                patience -= 1
+                if patience == 0:
+                    break
+
+
+
+            # Compute average training loss for the epoch
+            avg_train_loss = epoch_train_loss / len(train_loader)
+            train_loss_list.append(avg_train_loss)
 
             # Compute average validation loss for the epoch
             avg_valid_loss = epoch_valid_loss / len(validation_loader)
@@ -146,22 +164,72 @@ class Dataset:
         return torch.tensor(input_training.T), torch.tensor(input_validation.T), torch.tensor(input_testing.T), torch.tensor(output_training.T), torch.tensor(output_validation.T), torch.tensor(output_testing.T)
 
 
-def main():
-    NUM_EPOCHS = 80
-    LEARNING_RATE = 0.2
-    BATCH_SIZE = 1
+        
+    def split_samples_no_shuffle_test(self, X_in, X_out, valid_dist, n_samples):
+        training_samples = int(n_samples * (1-valid_dist))
+        testing_samples = 200
 
+
+        #Carve out last 200 for testing
+        input_testing = X_in[(n_samples-testing_samples):, :]
+        output_testing = X_out[(n_samples-testing_samples):]
+
+        X_in = X_in[:(n_samples-testing_samples), :]
+        X_out = X_out[:(n_samples-testing_samples)]
+
+
+
+
+        #Stack together and shuffle
+        X = np.hstack((X_in, X_out))
+
+
+        np.random.shuffle(X)
+        X = X.T
+
+        X_in = X[:-1, :]
+        X_out = X[-1, :]
+        X_out = X_out.reshape(-1,1)
+
+
+        
+        
+        
+        input_training = X_in[:, :training_samples]
+        input_validation = X_in[:, training_samples:(n_samples - testing_samples)]
+        
+
+        output_training = X_out[:training_samples]
+        output_validation = X_out[training_samples:(n_samples - testing_samples)]
+        
+
+        #print("output_training", output_training.shape)
+        #print("output_validation", output_validation.shape)
+        #print("output_testing", output_testing.shape)
+        
+        return torch.tensor(input_training.T), torch.tensor(input_validation.T), torch.tensor(input_testing.T), torch.tensor(output_training.T), torch.tensor(output_validation.T), torch.tensor(output_testing.T)
+
+
+
+def main():
     t_start = 301
     t_end = 1500
+    n_samples = t_end - t_start + 1
+
+    NUM_EPOCHS = 80
+    LEARNING_RATE = 0.01
+    BATCH_SIZE = 1
+
     valid_dist = 0.5
 
-    n_samples = t_end - t_start + 1
+    
 
     dataset = Dataset(beta=0.2, gamma=0.1, n=10, tau=25, guess_length=5)
     x = dataset.eulers_method(t_end)
 
     X_in, X_out = dataset.organise_to_in_out_matrices(x, t_start, t_end)
     input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples(X_in, X_out, valid_dist, n_samples)
+    #input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples_no_shuffle_test(X_in, X_out, valid_dist, n_samples)
 
     num_samples, input_size = X_in.shape
     _, output_size = X_out.shape
@@ -172,6 +240,8 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # Convert data to TensorDataset for DataLoader
+    #print("input_training", input_training.shape)
+    #print("output_training", output_training.shape)
     train_dataset = TensorDataset(input_training, output_training)
     validation_dataset = TensorDataset(input_validation, output_validation)
 
@@ -182,7 +252,7 @@ def main():
 
     train_loss_list, valid_loss_list = model.train_and_validate(train_loader, validation_loader, NUM_EPOCHS, criterion, optimizer)
     
-    t = np.arange(1, NUM_EPOCHS+1)
+    t = np.arange(1, len(train_loss_list)+1)
 
     # Plot losses
     plt.plot(t, train_loss_list, c='blue', label='Training Loss')

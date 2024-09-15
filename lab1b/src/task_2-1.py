@@ -58,16 +58,17 @@ class MLP(nn.Module):
 
 
 
-    def train_and_validate(self, inputs, targets, validation_inputs, validation_targets, num_epochs, criterion, optimizer):
+    def train_and_validate(self, inputs, targets, validation_inputs, validation_targets, num_epochs, criterion, optimizer, early_stopping):
 
         train_loss_list = []
         valid_loss_list = []
+        MAX_PATIENCE = 14
 
-
+        
         #Initialize Variables for EarlyStopping
         best_loss = float('inf')
         best_model_weights = None
-        patience = 10
+        patience = MAX_PATIENCE
 
 
 
@@ -101,15 +102,18 @@ class MLP(nn.Module):
             #print("validation_outputs", validation_outputs.shape)
             #print("validation_targets", validation_targets.t().shape)
 
-            # Early stopping
-            if val_loss < best_loss:
-                best_loss = val_loss
-                best_model_weights = copy.deepcopy(self.state_dict())  # Deep copy here      
-                patience = 10  # Reset patience counter
-            else:
-                patience -= 1
-                if patience == 0:
-                    break
+            if early_stopping:
+                # Early stopping
+                if val_loss < best_loss:
+                    best_loss = val_loss
+                    best_model_weights = copy.deepcopy(self.state_dict())  # Deep copy here
+                    best_model_epoch = epoch
+                    patience = MAX_PATIENCE  # Reset patience counter
+                else:
+                    patience -= 1
+                    if patience == 0:
+                        print("Early Stopping at epoch:", epoch, " saved model is from epoch:", best_model_epoch)
+                        break
 
             #print loss
             print("Epoch", epoch, "\t: training loss =", train_loss.item(), "\t: validation loss =", val_loss.item())
@@ -117,20 +121,12 @@ class MLP(nn.Module):
             train_loss_list.append(train_loss.item())
             valid_loss_list.append(val_loss.item())
     
+
+        #If no early_Stopping --> just take the last sample as best
+        if not early_stopping:
+            best_model_weights = copy.deepcopy(self.state_dict()) 
+
         return best_model_weights, train_loss_list, valid_loss_list
-
-
-
-
-
-
-        
-        
-
-
-
-
-
 
 
 class Dataset:
@@ -147,7 +143,8 @@ class Dataset:
 
 
     def eulers_method(self, end_t):
-        x = np.empty(end_t + self.guess_length)
+        x = np.zeros(end_t + self.guess_length)
+        #x = np.array([None]*(end_t+self.guess_length))
     
         x[0] = 1.5    
         for t in range(end_t):
@@ -228,82 +225,129 @@ class Dataset:
         return torch.tensor(input_training.T), torch.tensor(input_validation.T), torch.tensor(input_testing.T), torch.tensor(output_training.T), torch.tensor(output_validation.T), torch.tensor(output_testing.T)
         
 
+        
+    def split_samples_no_shuffle_test(self, X_in, X_out, valid_dist, n_samples):
+        training_samples = int(n_samples * (1-valid_dist))
+        testing_samples = 200
+
+
+        #Carve out last 200 for testing
+        input_testing = X_in[(n_samples-testing_samples):, :]
+        output_testing = X_out[(n_samples-testing_samples):]
+
+        X_in = X_in[:(n_samples-testing_samples), :]
+        X_out = X_out[:(n_samples-testing_samples)]
+
+
+
+
+        #Stack together and shuffle
+        X = np.hstack((X_in, X_out))
+
+
+        np.random.shuffle(X)
+        X = X.T
+
+        X_in = X[:-1, :]
+        X_out = X[-1, :]
+        X_out = X_out.reshape(-1,1)
+
+
+        
+        
+        
+        input_training = X_in[:, :training_samples]
+        input_validation = X_in[:, training_samples:(n_samples - testing_samples)]
+        
+
+        output_training = X_out[:training_samples]
+        output_validation = X_out[training_samples:(n_samples - testing_samples)]
+        
+
+        #print("output_training", output_training.shape)
+        #print("output_validation", output_validation.shape)
+        #print("output_testing", output_testing.shape)
+        
+        return torch.tensor(input_training.T), torch.tensor(input_validation.T), torch.tensor(input_testing.T), torch.tensor(output_training.T), torch.tensor(output_validation.T), torch.tensor(output_testing.T)
 
     
 
 
 
-def main():
-    np.random.seed(42)
-
-
-    NUM_EPOCHS = 80
-    LEARNING_RATE = 0.1
-
-    #Hidden layers only
-    layer_sizes = [30, 30]
+def main(LAYER_SIZES, LEARNING_RATE, WEIGHT_DECAY, ax1, ax2):
+    NUM_EPOCHS = 400
+    layer_sizes = LAYER_SIZES
+    ZERO_MEAN = True
+    EARLY_STOPPING = True
 
     t_start = 301
     t_end = 1500
-    valid_dist = 0.2
-    
+    valid_dist = 0.25
 
     n_samples = t_end - t_start + 1
 
-
     dataset = Dataset(beta=0.2, gamma=0.1, n=10, tau=25, guess_length=5)
-    #x is a numpy vector that holds all the values of x(t=0) to x(t=1500)
     x = dataset.eulers_method(t_end)
 
     X_in, X_out = dataset.organise_to_in_out_matrices(x, t_start, t_end)
-
-    input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples(X_in, X_out, valid_dist, n_samples)
-
-    #print(X_in)
-    #print(X_out)
-
-    #print("input_train", input_training.shape)
-    #print("output_trainig", output_training.shape)
-    #print("input_valid", input_validation.shape)
-    #print("output_valid", output_validation.shape)
-
     num_samples, input_size = X_in.shape
     _, output_size = X_out.shape
 
 
-    model = MLP(input_size=input_size, layer_sizes=layer_sizes, output_size=output_size)
+    if ZERO_MEAN:
+        X_in += np.random.normal(0, 0.05, (num_samples, input_size))
+        X_out += np.random.normal(0, 0.05, (n_samples, output_size))
 
+    #input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples(X_in, X_out, valid_dist, n_samples)
+    input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples_no_shuffle_test(X_in, X_out, valid_dist, n_samples)
 
-
-   
-
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    #print("input_trainng", input_training)
-    #print("output_training", output_training)
-    best_model_weights, train_loss_list, valid_loss_list = model.train_and_validate(input_training, output_training, input_validation, output_validation, NUM_EPOCHS, criterion, optimizer)
-
-    t = np.arange(1, NUM_EPOCHS+1)
     
 
-    plt.plot(t, train_loss_list, c='blue', label='Training Error')
-    plt.plot(t, valid_loss_list, c='red', label='Validation Error')
-    plt.legend()
-    plt.show()
+    model = MLP(input_size=input_size, layer_sizes=layer_sizes, output_size=output_size)
+
+    criterion = nn.MSELoss()
+    #optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+
+    best_model_weights, train_loss_list, valid_loss_list = model.train_and_validate(input_training, output_training, input_validation, output_validation, NUM_EPOCHS, criterion, optimizer, early_stopping=EARLY_STOPPING)
+
+    # Plot training and validation loss
+    ax1.plot(train_loss_list, label='Training Error', color='blue')
+    ax1.plot(valid_loss_list, label='Validation Error', color='red')
+    ax1.set_title(f"Nodes ({LAYER_SIZES}) Loss Curve (LR={LEARNING_RATE}, WD={WEIGHT_DECAY}), min(E_val)={round(min(valid_loss_list),3)}")
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Loss")
+    ax1.legend(loc="upper right")
+
+    # Plot predicted vs actual outputs
+    ax2.plot(X_out, label='Actual', color='green')
+    predicted_outputs = model(torch.tensor(X_in).double()).detach().numpy()
+    ax2.plot(predicted_outputs, label='Predicted', color='orange')
+    ax2.set_title("Actual vs Predicted")
+    ax2.set_xlabel("Sample")
+    ax2.set_ylabel("Output")
+    ax2.legend(loc="upper right")
+
+param_list = [
+    [[3, 2], 0.01, 10**(-2)],
+    [[4, 4], 0.01, 10**(-2)],
+    [[5, 6], 0.01, 10**(-2)]
+]
 
 
+np.random.seed(1050)
+
+# Create subplots
+fig, axes = plt.subplots(nrows=len(param_list), ncols=2, figsize=(12, 8))
+
+for i, params in enumerate(param_list):
+    ax1, ax2 = axes[i]
+    main(params[0], params[1], params[2], ax1, ax2)
+
+plt.tight_layout()
+#plt.show()
+
+#plt.savefig('../out/task_2-1/compare_3_models_no_noise.png')
+plt.savefig('../out/task_2-2/compare_3_models_w_noise.png')
 
 
-
-    #Plot resulting line
-
-    plt.plot(X_out)
-    print("torch.tensor(X_in).detach()", torch.tensor(X_in).detach())
-    print("torch.tensor(X_in)", torch.tensor(X_in))
-    tmp = model(torch.tensor(X_in))
-    plt.plot(tmp.detach())
-    plt.show()
-
-
-
-main()
