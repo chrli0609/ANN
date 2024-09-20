@@ -31,9 +31,9 @@ print("Patterns shape:", patterns.shape)
 # Model parameters
 in_dim, num_samples = patterns.shape
 out_dim, _ = targets.shape
-LEARNING_RATE = 0.005
-NUM_EPOCHS = 175
-hidden_nodes = 18  # Adjust as needed
+LEARNING_RATE = 0.05
+NUM_EPOCHS = 150
+hidden_nodes = 12  # Adjust as needed
 
 # Prepare for animation
 fig = plt.figure(figsize=(14, 7))
@@ -73,7 +73,7 @@ def update(frame):
     ax2.set_xlim([-5, 5])
     ax2.set_ylim([-5, 5])
     ax2.set_zlim([-0.7, 0.7])
-    ax2.set_title(f'Model trained with {nsamp} of 441 Samples ({round(nsamp/441*100,2)}%)')
+    ax2.set_title(f'Model trained with {nsamp} of 441 Samples ({round(nsamp/441*100,2)}%), lr = {LEARNING_RATE}')
     
     return ax2,
 
@@ -81,7 +81,7 @@ def update(frame):
 ani = FuncAnimation(fig, update, frames=441, interval=20, blit=False)
 
 # Save animation as GIF
-ani.save('model_training_animation.gif', writer='pillow')
+ani.save(str(LEARNING_RATE)+'_func_approx_vs_rand_train_samples.gif', writer='pillow')
 
 # Show plot
 plt.show()

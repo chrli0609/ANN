@@ -31,7 +31,7 @@ LEARNING_RATE = 0.01
 NUM_EPOCHS = 20
 MAX_HIDDEN_NODES_TO_TRY = 55
 
-#plot_data(X, color_list, X_test, color_list_test)
+plot_data(X, color_list, X_test, color_list_test)
 
 
 
@@ -104,27 +104,3 @@ plt.legend(loc="upper right")
 plt.show()
 
 
-
-
-'''
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense
-
-# Define the MLP model
-model = Sequential()
-model.add(Dense(10, activation='relu', input_shape=(X.shape[1],)))
-model.add(Dense(1, activation='sigmoid'))
-
-# Compile the model
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-# Evaluate the model
-loss, accuracy = model.evaluate(X, T, verbose=0)
-print(f"Model Accuracy: {accuracy:.3f}")
-
-# Test a prediction
-sample = [3.6216,  8.6661,  -2.8073, -0.44699]
-prediction = model.predict([sample])
-print(f"Predicted Class: {round(prediction[0][0])}")
-
-'''

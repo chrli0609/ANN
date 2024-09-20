@@ -87,7 +87,7 @@ def subsampling_25_from_each_class(all_data):
 def subsampling_50_from_classA(all_data):
 
     num_rows, num_cols = all_data.shape
-    size = int(0.75*num_cols/2)
+    size = int(0.5*num_cols/2)
 
     classA = all_data[:, :int(num_cols/2)]
     classB = all_data[:, int(num_cols/2):]
@@ -134,7 +134,7 @@ def subsampling_point_2_lt_0_and_point_8_gt_0_from_A(all_data):
 
 
     group1_list = classA[:,group1_mask]
-    group2_list = classB[:,group2_mask]
+    group2_list = classA[:,group2_mask]
 
     #Randomize within group 1 and group 2
     np.random.shuffle(np.transpose(group1_list))
@@ -208,18 +208,13 @@ def generate_random_non_linear_input_and_weights(in_dim, n, mA, mB, sigmaA, sigm
     color_list_test = generate_color_list(T_test)
     
     
-    #Add extra row at bottom for bias
-    W = np.random.rand(in_dim+1, 1)
 
-
-    print("W:", W.shape)
-    print("X:", X.shape)
     print("T:", T.shape)
     print("X_text:", X_test.shape)
     print("T_test:", T_test.shape)
     
 
-    return W, X, T, X_test, T_test, color_list, color_list_test
+    return X, T, X_test, T_test, color_list, color_list_test
 
 
 
@@ -243,6 +238,13 @@ def single_to_double_T(T):
     multi_T_np = np.array(multi_T)
 
     return multi_T_np.T
+
+
+
+
+def mse_loss(O, T):
+    return np.mean(1/2*(O - T)**2)
+
 
 
 
@@ -278,6 +280,20 @@ def accuracy_score(O, T):
             incorrect += 1
     
     return correct / (correct + incorrect)
+
+
+
+def decide_class(O):
+    new_list = []
+    for i in range(len(O)):
+        print("O", O)
+        print("O[i]", O[i])
+        if O[i] > 0 :
+            new_list.append(1)
+        else:
+            new_list.append(-1)
+
+    return new_list
             
 
 
@@ -288,13 +304,17 @@ def plot_data(X, color_list, X_test, color_list_test):
 	fig, ax = plt.subplots(nrows=2, ncols=1)
 
 
+
+
 	plt.subplot(2, 1, 1)
-	plt.scatter(X[0,:], X[1,:], c=color_list, label="Training data")
-	plt.legend(loc="upper right")
+	plt.title("Training data")
+	plt.scatter(X[0,:], X[1,:], c=color_list)
+	#plt.legend(loc="upper right")
 
 	plt.subplot(2, 1, 2)
-	plt.scatter(X_test[0,:], X_test[1,:], c=color_list_test, label="Validation data")
-	plt.legend(loc="upper right")
+	plt.title("Validation Data")
+	plt.scatter(X_test[0,:], X_test[1,:], c=color_list_test)
+	#plt.legend(loc="upper right")
 
 	plt.show()
 

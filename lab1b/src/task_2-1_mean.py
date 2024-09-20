@@ -44,8 +44,14 @@ class MLP(nn.Module):
         # Save the layers as a ModuleList so PyTorch can track them
         self.layers = nn.ModuleList(layers)
 
-
         self.double()
+
+    def init_weights(self):
+        for i in range(len(self.layers)):
+            torch.nn.init.normal_(self.layers[i].weight, mean=0.0, std=0.1)
+
+    
+
         
     def forward(self, x):
         # Pass input through each layer with ReLU activation except the output layer
@@ -64,6 +70,11 @@ class MLP(nn.Module):
 
         train_loss_list = []
         valid_loss_list = []
+
+        n_train_samples = inputs.shape[-1]
+        n_val_samples = validation_inputs.shape[-1]
+
+
         MAX_PATIENCE = 14
 
         
@@ -76,6 +87,16 @@ class MLP(nn.Module):
 
         for epoch in range(num_epochs):
 
+            
+            #Validation
+            running_vloss = 0.0
+            self.eval()
+            with torch.no_grad():
+                validation_outputs = self(validation_inputs)
+                val_loss = criterion(validation_outputs, validation_targets.t())#/ n_val_samples
+
+
+
             self.train()
 
             #Reset gradient
@@ -84,7 +105,7 @@ class MLP(nn.Module):
 
             #Training
             outputs = self(inputs)
-            train_loss = criterion(outputs, targets.t())
+            train_loss = criterion(outputs, targets.t()) #/ n_train_samples
             train_loss.backward()
             optimizer.step()
 
@@ -94,12 +115,15 @@ class MLP(nn.Module):
 
 
 
-            #Validation
-            
-            self.eval()
-            with torch.no_grad():
-                validation_outputs = self(validation_inputs)
-                val_loss = criterion(validation_outputs, validation_targets.t())
+
+                
+                #print("val_loss", val_loss)
+                #running_vloss += vloss
+                #print("val_loss", val_loss)
+
+            #avg_vloss = running_vloss / (i + 1)
+            #print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+
 
             #print("validation_outputs", validation_outputs.shape)
             #print("validation_targets", validation_targets.t().shape)
@@ -306,20 +330,22 @@ def main(LAYER_SIZES, LEARNING_RATE, WEIGHT_DECAY, ax1, ax2):
     run_list_valid_loss = []
     predicted_outputs_list = []
     X_out_list = []
+
     for i in range(NUM_RUNS):
         
-
+        
         if ZERO_MEAN:
-            X_in_run = X_in + np.random.normal(0, 0.05, (num_samples, input_size))
-            X_out_run = X_out + np.random.normal(0, 0.05, (n_samples, output_size))
+            X_in_run = X_in + np.random.normal(0, 0.15, (num_samples, input_size))
+            X_out_run = X_out + np.random.normal(0, 0.15, (n_samples, output_size))
 
         #input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples_no_shuffle_test(X_in, X_out, valid_dist, n_samples)
         input_training, input_validation, input_testing, output_training, output_validation, output_testing = dataset.split_samples(X_in_run, X_out_run, valid_dist, n_samples)
 
     
         model = MLP(input_size=input_size, layer_sizes=layer_sizes, output_size=output_size)
+        model.init_weights()
 
-        criterion = nn.MSELoss()
+        criterion = nn.MSELoss(reduction='mean')
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 
         best_model_weights, train_loss_list, valid_loss_list = model.train_and_validate(input_training, output_training, input_validation, output_validation, NUM_EPOCHS, criterion, optimizer, early_stopping=EARLY_STOPPING)
@@ -371,9 +397,11 @@ def main(LAYER_SIZES, LEARNING_RATE, WEIGHT_DECAY, ax1, ax2):
 # Define the parameter list (layer sizes and learning rates)
 NUM_RUNS = 10
 param_list = [
-    [[3, 2], 0.01],
-    [[4, 4], 0.01],
-    [[5, 6], 0.01]
+    [[4, 3], 0.01],
+    [[4, 6], 0.01],
+    [[4, 9], 0.01]
+    #[[6, 8], 0.01],
+    #[[7, 9], 0.01]
 ]
 
 # Define the range of weight decay values
@@ -385,8 +413,9 @@ def update_plot(frame):
     axes = []
 
     # Create a 2x3 grid for displaying the models (3 models, 2 plots each)
-    for i in range(3):
-        axes.append((fig.add_subplot(2, 3, i + 1), fig.add_subplot(2, 3, i + 4)))
+    num_models = len(param_list)
+    for i in range(num_models):
+        axes.append((fig.add_subplot(2, num_models, i + 1), fig.add_subplot(2, num_models, i + 4)))
 
     wd_idx = frame % len(weight_decay_values)  # Get the index for the weight decay
     weight_decay = weight_decay_values[wd_idx]

@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
+
+
 from model import MLP
 from functions import *
 
@@ -23,6 +25,11 @@ targets = Z.reshape(1, ndata)
 
 # Reshape X and Y into 1D arrays and concatenate them as patterns
 patterns = np.vstack((X.reshape(1, ndata), Y.reshape(1, ndata)))
+
+
+
+
+
 
 # Prepare the figure and axes for the animation
 fig = plt.figure(figsize=(14, 7))
@@ -61,17 +68,27 @@ def update(frame):
     
     # Train the model
     model = MLP(IN_DIM=patterns.shape[0], NUM_IN_NODES=hidden_nodes, OUT_DIM=targets.shape[0], LEARNING_RATE=0.005)
-    model.training(patterns, targets, NUM_EPOCHS=400)
+    model.training(patterns, targets, NUM_EPOCHS=200)
     
     # Get predictions from the model
     O, _ = model.forward_pass(patterns)
     
     # Reshape the output to the grid size
     Z_pred = np.reshape(O, (len(x), len(y)))
+
+
+
+
+    #Compute the mean squared error between the two
+    loss = mse_loss(Z_pred, Z)
+    print(f"Neuron {hidden_nodes},\tMSE loss = {loss}")
+
+
+
     
     # Plot the model's prediction
     ax2.plot_surface(X, Y, Z_pred, cmap='viridis')
-    ax2.set_title(f'Model Prediction with {hidden_nodes} Hidden Nodes')
+    ax2.set_title(f'Model Prediction with {hidden_nodes} Hidden Nodes\nMSE: {round(loss,5)}')
     ax2.set_xlim([-5, 5])
     ax2.set_ylim([-5, 5])
     ax2.set_zlim([-0.7, 0.7])

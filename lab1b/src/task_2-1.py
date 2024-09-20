@@ -362,7 +362,7 @@ fig = plt.figure(figsize=(18, 10))
 total_frames = len(weight_decay_values)
 
 # Create the animation
-anim = FuncAnimation(fig, update_plot, frames=total_frames, i repeat=False)
+anim = FuncAnimation(fig, update_plot, frames=total_frames, repeat=False)
 
 # Save the animation as a GIF
 anim.save('../out/all_models_weight_decay_animation.gif', writer='pillow')
