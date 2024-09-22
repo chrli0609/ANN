@@ -53,7 +53,7 @@ def update_plot(num, ax1, ax2, sine_test_X, sine_test_F, sine_pred_F_units, sine
     ax1.plot(sine_test_X, sine_test_F, label="True", color="blue")
     ax1.plot(sine_test_X, pred_units, label="Pred", color="red")
     ax1.set_title(f"Predicted function with varying number of RBF units", fontsize=10)
-    ax1.text(0.85, 0.95, f'Number of RBF Units: {num + 5}\n$\sigma^2$: {const_variance}\nMean Abs Error: {mean_abs_error_units:.4f}', transform=ax1.transAxes, 
+    ax1.text(0.8, 0.95, f'RBF Units: {num + 5}\n$\sigma^2$: {const_variance}\nErr: {mean_abs_error_units:.4f}', transform=ax1.transAxes, 
                fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
     ax1.legend()
 
@@ -65,15 +65,15 @@ def update_plot(num, ax1, ax2, sine_test_X, sine_test_F, sine_pred_F_units, sine
     ax2.plot(sine_test_X, sine_test_F, label="True", color="blue")
     ax2.plot(sine_test_X, pred_var, label="Pred", color="red")
     ax2.set_title(f"Predicted function with varying variance", fontsize=10)
-    ax2.text(0.85, 0.95, f'Number of RBF units: {const_rbf_units}\n$\sigma^2$: {0.02 * (num + 1):.2f}\nMean Abs Error: {mean_abs_error_var:.4f}', transform=ax2.transAxes, 
+    ax2.text(0.8, 0.95, f'RBF units: {const_rbf_units}\n$\sigma^2$: {0.02 * (num + 1):.2f}\nErr: {mean_abs_error_var:.4f}', transform=ax2.transAxes, 
                fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
     ax2.legend()
 
 # Main code for setting up and animating
 STEP_LENGTH = 0.1
-NOISE = True
-LEARNING_RATE = 0.001
-NUM_EPOCHS = 20
+NOISE = False
+LEARNING_RATE = 0.01
+NUM_EPOCHS = 40
 
 # Generate data for the square function
 sine_train_X, sine_train_F, sine_test_X, sine_test_F = generate_data(2 * np.pi, STEP_LENGTH, square_func, NOISE)
@@ -84,7 +84,10 @@ constant_variance = 0.1
 sine_pred_F_units = []
 
 for num_rbf_units in range(5, max_rbf_units + 15):
+    #Handpicked initialisation
     mu_list = np.linspace(0, 2 * np.pi, num_rbf_units)
+    #Random initialisation
+    #mu_list = np.random.uniform(low=0, high=2*np.pi,size=(num_rbf_units, 1))
     variance_list = [constant_variance] * num_rbf_units
     rbf_network = RBF(mu_list, variance_list)
     rbf_network.seq_delta_training(sine_train_X, sine_train_F, LEARNING_RATE, NUM_EPOCHS)
@@ -95,7 +98,10 @@ rbf_units = 15
 sine_pred_F_var = []
 
 for i in range(30):
+    #Handpicked initialisation
     mu_list = np.linspace(0, 2 * np.pi, rbf_units)
+    #Random initialisation
+    #mu_list = np.random.uniform(low=0, high=2*np.pi,size=(rbf_units, 1))
     variance_list = [0.02 * (i + 1)] * rbf_units
     rbf_network = RBF(mu_list, variance_list)
     rbf_network.seq_delta_training(sine_train_X, sine_train_F, LEARNING_RATE, NUM_EPOCHS)
@@ -110,5 +116,5 @@ ani = FuncAnimation(fig, update_plot, frames=min(len(sine_pred_F_units), len(sin
                     interval=500)
 
 plt.tight_layout()
-ani.save('../out/rbf_varying_units_and_variance.gif', writer='pillow')
+ani.save('../out/task_1-2/rbf_varying_units_and_variance_seq_square_no_noise.gif', writer='pillow')
 plt.show()
