@@ -46,6 +46,18 @@ class RBF():
                 PHI[i, j] = self.phi(j, x_vec[i])
 
         return PHI
+    
+    def gen_seq_phi_mat(self, x_single_sample):
+        num_centers = len(self.mu)  # Number of RBF centers
+
+        # Initialize PHI matrix
+        PHI = np.zeros((num_centers, 1))
+
+        for i in range(num_centers):
+            PHI[i] = self.phi(i, x_single_sample)
+        
+        return PHI
+
 
 
 
@@ -68,6 +80,36 @@ class RBF():
 
         #Solve Least Squared System PHI.T * PHI * w = PHI.T * T
         self.w = np.dot((np.dot(np.linalg.inv(np.dot(PHI.T,PHI)),PHI.T)), T)
+
+
+
+    def seq_delta_training(self, X, T, lr, num_epochs):
+        
+        #For each epoch
+        for epoch in range(num_epochs):
+
+            #Shuffle data indices
+            indices = np.random.permutation(len(X))
+            X = X[indices]
+            T = T[indices]
+
+            #Loop over all the data points
+            for i in range(len(X)):
+                
+                PHI =self.gen_seq_phi_mat(X[i])
+
+                # PHI.T (1 x n_rbf_units)
+                # w     (n_rbf_units x 1)
+                # PHI   (n_rbf_units x 1)
+
+                err = T[i] - np.matmul(PHI.T, self.w) 
+                delta_w = lr*err*PHI
+
+                self.w += delta_w
+                
+
+        
+
 
 
     def abs_res_err(self, F_pred, F_test):

@@ -303,9 +303,6 @@ def plot_data(X, color_list, X_test, color_list_test):
 
 	fig, ax = plt.subplots(nrows=2, ncols=1)
 
-
-
-
 	plt.subplot(2, 1, 1)
 	plt.title("Training data")
 	plt.scatter(X[0,:], X[1,:], c=color_list)
