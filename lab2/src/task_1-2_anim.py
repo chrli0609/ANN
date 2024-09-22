@@ -103,11 +103,12 @@ for i in range(30):
 
 # Plotting the animations
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 6))  # Smaller figure size
-print("units, var", len(sine_pred_F_units), "sdguhdfg", len(sine_pred_F_var))   
+print("units ", len(sine_pred_F_units), "var ", len(sine_pred_F_var))   
 # Create the animation
 ani = FuncAnimation(fig, update_plot, frames=min(len(sine_pred_F_units), len(sine_pred_F_var)),
                     fargs=(ax1, ax2, sine_test_X, sine_test_F, sine_pred_F_units, sine_pred_F_var),
                     interval=500)
 
 plt.tight_layout()
+ani.save('../out/rbf_varying_units_and_variance.gif', writer='pillow')
 plt.show()
