@@ -1,6 +1,8 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
 
 class RBF():
 
@@ -22,21 +24,29 @@ class RBF():
 
     
     def phi(self, i, x_vec):
-        exponent = -(np.matmul((x_vec-self.mu[i]).T, (x_vec-self.mu[i]))) / (2 * self.variance[i])
+        # Ensure x_vec and mu[i] are treated as 1D arrays
+        x_vec = np.atleast_1d(x_vec)
+        mu_i = np.atleast_1d(self.mu[i])
 
-        return np.power(math.e, exponent)
+        # Calculate the exponent for the RBF
+        exponent = -(np.dot((x_vec - mu_i).T, (x_vec - mu_i))) / (2 * self.variance[i])
+        return np.exp(exponent)
 
     def gen_phi_mat_vector(self, x_vec):
-        N_samples, in_dim = x_vec.shape
+        # Assuming x_vec is 1D and self.mu contains the centers
+        num_data_points = len(x_vec)
+        num_centers = len(self.mu)  # Number of RBF centers
 
+        # Initialize PHI matrix
+        PHI = np.zeros((num_data_points, num_centers))
 
-        PHI = np.zeros((N_samples, self.n_rbf_units))
+        # Compute PHI matrix
+        for i in range(num_data_points):
+            for j in range(num_centers):
+                PHI[i, j] = self.phi(j, x_vec[i])
 
-        for i in range(N_samples):
-            for j in range(self.n_rbf_units):
-                PHI[i,j] = self.phi(j, x_vec[i])
-        
         return PHI
+
 
 
     def forward(self, X):
@@ -58,9 +68,69 @@ class RBF():
 
         #Solve Least Squared System PHI.T * PHI * w = PHI.T * T
         self.w = np.dot((np.dot(np.linalg.inv(np.dot(PHI.T,PHI)),PHI.T)), T)
+
+
+    def abs_res_err(self, F_pred, F_test):
+        return np.mean(abs(F_pred-F_test))
+
         
         
+    def plot_rbf_1d_inputs(self, x_range, granularity, test_X, pred_F, test_F, wave_type):
+        """Plot the 1D position of RBF units in the weight space along with their distributions."""
+
+        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 8))  # Create a figure with two subplots
+        
+
+
+        # Add a supertitle for the entire figure
+        fig.suptitle(f"Absolute Residual Error: {round(self.abs_res_err(pred_F, test_F),4)}", fontsize=16)
+
+
+        # First subplot: 1D RBF Unit Distributions in Weight Space
+        ax[0].set_title("1D RBF Unit Distributions in Weight Space")
+        ax[0].set_xlabel("x")
+        ax[0].set_ylabel("Weighted RBF Output")
+        ax[0].grid(True)
+
+        # Add text showing how many RBF units we have
+        num_rbf_units = self.n_rbf_units
+        ax[0].text(0.75, 0.95, f'Number of RBF Units: {num_rbf_units}\n$\sigma^2$: {self.variance[0]}', transform=ax[0].transAxes, 
+               fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
+
+
+        x_vals = np.linspace(x_range[0], x_range[1], granularity)  # X values for plotting the RBF curves
+
+        # Plot each RBF unit's distribution
+        for i in range(self.n_rbf_units):
+            y_vals = []
+            for x in x_vals:
+                x_vec = np.array([x])  # Ensure x_vec has shape (n, 1)
+                # Calculate the RBF output for the current unit
+                rbf_value = self.w[i] * self.phi(i, x_vec)  # Weighted RBF output
+                y_vals.append(rbf_value)
+
+            # Plot the RBF distribution as a curve
+            ax[0].plot(x_vals, y_vals)#, label=f'RBF Unit {i+1} (μ={self.mu[i]}, σ={self.variance[i]})')
+
+            # Mark the center position (mu) and weight (w) with a scatter point
+            ax[0].scatter(self.mu[i], self.w[i], color='red', zorder=5)  # Higher zorder to appear on top
+
+
+
+        ax[0].legend()  # Add a legend for the RBF units
+
+        # Second subplot: Predicted and Testing Data Wave Approximation
+        ax[1].set_title(wave_type + " Wave Approximation with RBF")
+        ax[1].plot(test_X, pred_F, label="Predicted Testing Data")
+        ax[1].plot(test_X, test_F, label="Testing Data")
+        ax[1].legend()
+
+        plt.tight_layout()  # Adjust layout so labels don't overlap
+        plt.show()
     
+
+
+
 
     def plot_2d_weight_space(self, x_range, granularity):
         x_vals_1 = np.linspace(x_range[0], x_range[1], granularity)
@@ -70,7 +140,6 @@ class RBF():
         
         plt.figure(figsize=(8, 6))
         for k in range(self.n_rbf_units):
-            #Z = np.zeros_like(X)
             for i in range(len(x_vals_1)):
                 for j in range(len(x_vals_2)):
                     Z[i, j] += self.phi(k, [x_vals_1[i], x_vals_2[j]])
@@ -111,107 +180,98 @@ class RBF():
         plt.show()
 
 
+    def plot_rbf_1d_inputs_animated(self, x_range, granularity, pred_F, test_F, wave_type, train_X, train_F):
+        """Plot the 1D position of RBF units in the weight space along with their distributions, with animation."""
+
+        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 8))  # Create a figure with two subplots
+
+        # Set titles and labels
+        fig.suptitle(f"Radial Basis Function Approximation", fontsize=16)
+        ax[0].set_title("1D RBF Unit Distributions in Weight Space")
+        ax[0].set_xlabel("x")
+        ax[0].set_ylabel("Weighted RBF Output")
+        ax[0].grid(True)
+
+        ax[1].set_title(wave_type + " Wave Approximation with RBF")
+        ax[1].set_xlabel("x")
+        ax[1].set_ylabel("Amplitude")
+        ax[1].grid(True)
+
+        # Prepare data
+        x_vals = np.linspace(x_range[0], x_range[1], granularity)
+        line_rbf, = ax[0].plot([], [], lw=2, label="RBF Distribution")  # Line for the RBF unit distribution
+        scatter_rbf = ax[0].scatter([], [], color='red')  # Red scatter points for RBF unit centers
+
+        line_pred, = ax[1].plot([], [], label="Predicted Testing Data")  # Line for predicted data
+        line_test, = ax[1].plot([], [], label="Testing Data")  # Line for true testing data
+        ax[1].legend()
+
+        # Set axis limits
+        ax[0].set_xlim(x_range[0], x_range[1])
+        ax[0].set_ylim(-2, 2)
+
+        ax[1].set_xlim(0, len(test_F))
+        ax[1].set_ylim(min(test_F) - 0.5, max(test_F) + 0.5)
+
+        # Function to initialize the animation
+        def init():
+            line_rbf.set_data([], [])
+            scatter_rbf.set_offsets(np.empty((0, 2)))  # Pass an empty 2D array with shape (0, 2)
+            line_pred.set_data([], [])
+            line_test.set_data([], [])
+            return line_rbf, scatter_rbf, line_pred, line_test
 
 
+        # Function to animate each frame
+        def animate(frame):
+            # Dynamically update the weights and centers for each frame
+            step_size = 0.1 * (frame + 1)  # Incremental step size from 0.1 to 1.5
+            current_mu_list = np.arange(0.1, step_size + 0.1, 0.1)
+            current_variance_list = [0.1] * len(current_mu_list)  # Keep variance constant
+
+            num_rbf_units = self.n_rbf_units
+            ax[0].text(0.75, 0.95, f'Number of RBF Units: {num_rbf_units}', transform=ax[0].transAxes, 
+               fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
 
 
-def sine_func(x):
-    return np.sin(2*x)
+            # Update RBF parameters dynamically
+            self.mu = np.array(current_mu_list)
+            self.variance = np.array(current_variance_list)
+            print("self.w", self.w.shape)
+            #self.w = np.random.rand(len(current_mu_list), 1)  # Randomize weights for visualization
+            self.batch_supervised_training(train_X, train_F)
 
-def square_func(x):
-    return 1 if sine_func(x) > 0 else -1
+            print("self.w", self.w.shape)
+        
+            # Update RBF plot in the first subplot
+            y_vals_rbf = []
+            for x in x_vals:
+                x_vec = np.array([x])
+                rbf_value = 0
+                for i in range(len(current_mu_list)):
+                    rbf_value += self.w[i] * self.phi(i, x_vec)
+                y_vals_rbf.append(rbf_value)
+
+            line_rbf.set_data(x_vals, y_vals_rbf)
+            scatter_rbf.set_offsets(np.c_[self.mu, self.w.flatten()])  # Update scatter points for RBF units
+
+            # Update the predicted vs. testing wave in the second subplot
+            new_pred_F = self.forward(np.linspace(x_range[0], x_range[1], len(test_F)).reshape(-1, 1))
+            line_pred.set_data(np.arange(len(new_pred_F)), new_pred_F)
+            line_test.set_data(np.arange(len(test_F)), test_F)
+
+            return line_rbf, scatter_rbf, line_pred, line_test
+
+        num_frames = 15  # Number of animation frames (step sizes from 0.1 to 1.5)
+        ani = FuncAnimation(fig, animate, frames=num_frames, init_func=init, blit=True, repeat=True)
+
+        plt.tight_layout()
+        plt.show()
+
 
 
 
     
-# Plot the summed RBF response
-STEP_LENGTH = 0.1
-#n_rbf_units = 4
-in_dim = 2
-'''
-mu_list = [
-    [-4,-4],
-    [-4, 4],
-    [-2,-2],
-    [-2, 2],
-    [0, 0],
-    [0,-4],
-    [4, 0],
-    [-4,0],
-    [0, 4],
-    [2, 2],
-    [2,-2],
-    [4,-4],
-    [4, 4]
-]
-
-variance_list = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
-'''
-
-mu_list = np.arange(0, 2*np.pi, 0.3)
-variance_list = [0.1] *len(mu_list)
-
-"""
-mu_list = []
-for i in range(-4, 4, 4):
-    for j in range(-4, 4, 4):
-        mu_list.append([i,j])
-
-variance_list = [0.5] * (len(mu_list))
-"""
-
-print("mu_list", mu_list)
-print("variance_list", variance_list)
-
-def generate_data(x_end, step_length, function):
-
-    train_X = ((np.arange(0 , x_end, step_length)).T).reshape(-1,1)
-    test_X = ((np.arange(0.05, x_end, step_length)).T).reshape(-1,1)
-    
-
-    N_train_samples = len(train_X)
-    N_test_samples = len(test_X)
-
-
-
-    train_F = np.zeros((N_train_samples, 1))
-    test_F = np.zeros((N_test_samples, 1))
-
-    for i in range(len(train_X)):
-        train_F[i] = function(train_X[i])
-
-    for i in range(len(test_X)):
-        test_F[i] = function(test_X[i])
-
-    print("train_X", train_X.shape)
-
-    return train_X, train_F, test_X, test_F
-
-
-
-
-
-#Generate Data for sine and square wave
-sine_train_X, sine_train_F, sine_test_X, sine_test_F = generate_data(2*np.pi, STEP_LENGTH, sine_func)
-#plt.plot(sine_train_X, sine_train_F , label="Sin(2x) training")
-#plt.plot(sine_test_X, sine_test_F , label="Sin(2x) testing")
-#plt.show()
-
-
-
-# Sine
-rbf_network = RBF(mu_list, variance_list)
-rbf_network.plot_2d_weight_space((-5, 5), 100)
-
-rbf_network.batch_supervised_training(sine_train_X, sine_train_F)
-
-sine_pred_F = rbf_network.forward(sine_test_X)
-
-plt.plot(sine_pred_F, label="Predicted Testing Data")
-plt.plot(sine_train_F, label="Training Data")
-plt.plot(sine_test_F, label="Testing Data")
-plt.legend()
-plt.show()
 
 
 
