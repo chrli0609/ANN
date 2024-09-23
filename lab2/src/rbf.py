@@ -68,7 +68,83 @@ class RBF():
         return np.matmul(PHI, self.w)
 
 
-    
+
+
+    """def competitive_learning(self, X, F, lr, num_epochs):
+
+
+        for epoch in range(num_epochs):
+            
+            self.plot_centroids((0,7),100)
+
+            #Shuffle the order of the data
+            indices = np.random.permutation(len(X))
+            X = X[indices]
+
+            for i in range(len(X)):
+                #Compute distance between input and each centroid
+                d_vec = np.linalg.norm(X[i]-self.mu)
+
+                #Find the closest centroid
+                max_index = np.argmax(d_vec)
+
+                #Update that weight
+                self.mu[max_index] += lr * (X[i]-self.mu[max_index])"""
+
+
+    def competitive_learning(self, X, lr, num_epochs):
+        
+        fig, ax = plt.subplots()
+
+        # Scatter plot to visualize centroids and input data points (1D)
+        scatter_centroids, = ax.plot(self.mu, np.zeros_like(self.mu), 'ro', label="Centroids")
+        scatter_data, = ax.plot(X, np.zeros_like(X), 'bx', alpha=0.5, label="Input Data")
+
+        # Set limits for the plot based on input data
+        ax.set_xlim(0, 2*np.pi)
+        ax.set_ylim(-1, 2)  # Fixed y-range since data is 1D
+
+        # Function to update the plot for each frame
+        def update(epoch):
+            indices = np.random.permutation(len(X))
+            X_shuffled = X[indices]
+            #X_shuffled = X
+
+            print("mu", self.mu)
+
+            for i in range(len(X_shuffled)):
+                # Compute distance between input and each centroid (1D case)
+                d_vec = []
+                for j in range(len(self.mu)):
+                    #print("X[i]", X[i])
+                    #print("mu[j]", self.mu[j])
+                    d_vec.append(np.linalg.norm(X_shuffled[i] - self.mu[j]))
+                    #d_vec.append(abs((X[i] - self.mu[j])))
+
+                print("X[i]", X[i])
+                # Find the closest centroid
+                min_index = np.argmin(d_vec)
+                print("min_index", min_index)
+                print("X_shuffled[i] - self.mu[min_index]", X_shuffled[i] - self.mu[min_index])
+
+                # Update the corresponding weight
+                self.mu[min_index] += lr * (X_shuffled[i] - self.mu[min_index])
+                #self.mu[min_index] += lr * X_shuffled[i]
+                print("mu", self.mu)
+
+            # Update scatter plot data for centroids
+            scatter_centroids.set_xdata(self.mu.flatten())
+
+            ax.set_title(f'Epoch: {epoch + 1}/{num_epochs}')
+            return scatter_centroids, scatter_data
+
+        # Create the animation
+        anim = FuncAnimation(fig, update, frames=num_epochs, repeat=False, interval=200)
+
+        plt.legend()
+        plt.show()
+
+
     def batch_supervised_training(self, X, T):
         PHI = self.gen_phi_mat_vector(X)
 
