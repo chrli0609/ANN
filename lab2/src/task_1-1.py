@@ -47,7 +47,8 @@ def generate_data(x_end, step_length, function):
 
 
 ### SET PARAMETERS ###
-mu_list = np.arange(0, 2*np.pi, 0.22)
+#mu_list = np.arange(0, 2*np.pi, 0.22)
+mu_list = np.linspace(0, 2*np.pi, 25)
 variance_list = [0.1] *len(mu_list)
 
 STEP_LENGTH = 0.1
@@ -55,7 +56,7 @@ STEP_LENGTH = 0.1
 ######################
 
 
-'''
+
 #Generate Data for sine wave
 sine_train_X, sine_train_F, sine_test_X, sine_test_F = generate_data(2*np.pi, STEP_LENGTH, sine_func)
 
@@ -72,11 +73,11 @@ sine_pred_F = rbf_network.forward(sine_test_X)
 
 rbf_network.plot_rbf_1d_inputs((0, 7), 100, sine_test_X, sine_pred_F, sine_test_F, "Sine")
 
+
+
+
+
 '''
-
-
-
-
 ########################## Square ##########################
 ### SET PARAMETERS ###
 #mu_list = np.arange(0, 2*np.pi, 0.2)
@@ -119,6 +120,6 @@ rbf_network.batch_supervised_training(sine_train_X, sine_train_F)
 sine_pred_F = rbf_network.forward(sine_test_X)
 
 rbf_network.plot_rbf_1d_inputs((0, 7), 100, sine_test_X, sine_pred_F, sine_test_F, "Square")
-
+'''
 
 

@@ -31,3 +31,22 @@ def generate_data(x_end, step_length, function, noise):
         test_F += np.random.normal(0, 0.1, size=(N_test_samples, 1))
 
     return train_X, train_F, test_X, test_F
+
+
+
+def 可愛い(filepath):
+    
+    f = open(filepath, 'r')
+    data = f.readlines()
+    X_data = []
+    F_data = []
+    for i in range(len(data)):
+        elements = data[i].split()
+        X_data.append([float(elements[0]), float(elements[1])])
+        F_data.append([float(elements[2]), float(elements[3])])
+    
+
+
+    #X (samples x 2)
+    #F (samples x 2)
+    return np.array(X_data), np.array(F_data)

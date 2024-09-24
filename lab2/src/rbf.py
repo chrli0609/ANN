@@ -92,7 +92,17 @@ class RBF():
                 self.mu[max_index] += lr * (X[i]-self.mu[max_index])"""
 
 
-    def competitive_learning(self, X, lr, num_epochs):
+    def h(self, min_index):
+        var = 0.1
+        curr_node = np.linspace(0, len(self.mu)-1, len(self.mu))
+        neighbor_arr = np.exp((-(np.sqrt(var)*(min_index-curr_node))**2)/(2*var)  )
+        for i in range(len(neighbor_arr)):
+            if (neighbor_arr[i]) < 1e-05:
+                neighbor_arr[i] = 0
+        print("neigbor_arr", neighbor_arr.shape)
+        return neighbor_arr.reshape(-1,1)
+
+    def competitive_learning(self, X, lr, num_epochs, spillage=False):
         
         fig, ax = plt.subplots()
 
@@ -125,11 +135,15 @@ class RBF():
                 # Find the closest centroid
                 min_index = np.argmin(d_vec)
                 print("min_index", min_index)
-                print("X_shuffled[i] - self.mu[min_index]", X_shuffled[i] - self.mu[min_index])
-
+                #print("X_shuffled[i] - self.mu[min_index]", X_shuffled[i] - self.mu[min_index])
+                print("self.h(min_index)", self.h(min_index))
+                print("(X_shuffled[i] - self.mu)", (X_shuffled[i] - self.mu).shape)
                 # Update the corresponding weight
-                self.mu[min_index] += lr * (X_shuffled[i] - self.mu[min_index])
-                #self.mu[min_index] += lr * X_shuffled[i]
+                if spillage:
+                    self.mu += lr * self.h(min_index) * (X_shuffled[i] - self.mu)
+                else:
+                    self.mu[min_index] += lr * (X_shuffled[i] - self.mu[min_index])
+                
                 print("mu", self.mu)
 
             # Update scatter plot data for centroids
@@ -142,6 +156,60 @@ class RBF():
         anim = FuncAnimation(fig, update, frames=num_epochs, repeat=False, interval=200)
 
         plt.legend()
+        if spillage:
+            anim.save("unit_dist_spillage.gif", writer="pillow")
+        else:
+            anim.save("unit_dist_winner_takes_All.gif", writer="pillow")
+        #plt.show()
+
+
+
+
+    def competitive_learning_2d(self, X, lr, num_epochs, spillage=False):
+            
+        fig, ax = plt.subplots()
+
+        # Scatter plot to visualize centroids and input data points (2D)
+        scatter_centroids, = ax.plot(self.mu[:, 0], self.mu[:, 1], 'ro', label="Centroids")
+        scatter_data, = ax.plot(X[:, 0], X[:, 1], 'bx', alpha=0.5, label="Input Data")
+
+        # Set limits for the plot based on input data
+        margin = 0.3
+        ax.set_xlim(np.min(X[:, 0]) - margin, np.max(X[:, 0]) + margin)
+        ax.set_ylim(np.min(X[:, 1]) - margin, np.max(X[:, 1]) + margin)
+
+        # Function to update the plot for each frame
+        def update(epoch):
+            indices = np.random.permutation(len(X))
+            X_shuffled = X[indices]
+
+            for i in range(len(X_shuffled)):
+                # Compute distances between input and each centroid (2D case)
+                d_vec = [np.linalg.norm(X_shuffled[i] - self.mu[j]) for j in range(len(self.mu))]
+
+                # Find the closest centroid
+                min_index = np.argmin(d_vec)
+
+                # Update the corresponding centroid
+                if spillage:
+                    self.mu += lr * self.h(min_index) * (X_shuffled[i] - self.mu)
+                else:
+                    self.mu[min_index] += lr * (X_shuffled[i] - self.mu[min_index])
+
+            # Update scatter plot data for centroids
+            scatter_centroids.set_data(self.mu[:, 0], self.mu[:, 1])
+
+            ax.set_title(f'Epoch: {epoch + 1}/{num_epochs}')
+            return scatter_centroids, scatter_data
+
+        # Create the animation
+        anim = FuncAnimation(fig, update, frames=num_epochs, repeat=False, interval=200)
+
+        plt.legend()
+        '''if spillage:
+            anim.save("unit_dist_spillage.gif", writer="pillow")
+        else:
+            anim.save("unit_dist_winner_takes_All.gif", writer="pillow")'''
         plt.show()
 
 
@@ -160,9 +228,11 @@ class RBF():
 
 
     def seq_delta_training(self, X, T, lr, num_epochs):
+        error_list = []
         
         #For each epoch
         for epoch in range(num_epochs):
+            epoch_error = 0
 
             #Shuffle data indices
             indices = np.random.permutation(len(X))
@@ -179,12 +249,23 @@ class RBF():
                 # PHI   (n_rbf_units x 1)
 
                 err = T[i] - np.matmul(PHI.T, self.w) 
+                epoch_error += float(abs(err))
                 delta_w = lr*err*PHI
 
                 self.w += delta_w
-                
 
-        
+            error_list.append(epoch_error/len(X))
+
+        '''print("error_list",error_list)
+        plt.plot(error_list, label='Error')
+        plt.xlabel('Epochs')
+        plt.ylabel('Average Error')
+        plt.title('Training Error over Epochs')
+        plt.legend()
+        plt.show()'''
+
+
+                
 
 
 
@@ -201,7 +282,7 @@ class RBF():
 
 
         # Add a supertitle for the entire figure
-        fig.suptitle(f"Absolute Residual Error: {round(self.abs_res_err(pred_F, test_F),4)}", fontsize=16)
+        #fig.suptitle(f"Absolute Residual Error: {round(self.abs_res_err(pred_F, test_F),4)}", fontsize=16)
 
 
         # First subplot: 1D RBF Unit Distributions in Weight Space
@@ -238,15 +319,13 @@ class RBF():
         ax[0].legend()  # Add a legend for the RBF units
 
         # Second subplot: Predicted and Testing Data Wave Approximation
-        ax[1].set_title(wave_type + " Wave Approximation with RBF")
+        ax[1].set_title(wave_type + " Wave Approximation with RBF\nAbsolute Residual Error: "+ str(round(self.abs_res_err(pred_F, test_F),4)))
         ax[1].plot(test_X, pred_F, label="Predicted Testing Data")
         ax[1].plot(test_X, test_F, label="Testing Data")
         ax[1].legend()
 
         plt.tight_layout()  # Adjust layout so labels don't overlap
         plt.show()
-    
-
 
 
 
