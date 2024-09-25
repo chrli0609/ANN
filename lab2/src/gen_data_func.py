@@ -50,3 +50,35 @@ def 可愛い(filepath):
     #X (samples x 2)
     #F (samples x 2)
     return np.array(X_data), np.array(F_data)
+
+
+
+def 動物を読みます(ファイル道, num_types, samples_per_type):
+
+    ファイル = open(ファイル道, "r")
+
+    線 = ファイル.readline().split(',')
+
+    ファイル.close()
+
+
+    新しい一覧表 = []
+    インデクスー = 0
+    for い in range(num_types):
+
+        インナー一覧表 = []
+
+        for じ in range(samples_per_type):
+            インナー一覧表.append(int(線[インデクスー].strip('\n')))
+            インデクスー += 1
+        新しい一覧表.append(インナー一覧表)
+
+
+
+    return np.array(新しい一覧表)
+
+
+    
+    
+
+
