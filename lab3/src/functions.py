@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def generate_img_array(filepath, img_dim):
     file = open(filepath, "r")
 
-    pattern_list = file.readline().split(",", 8)
+    pattern_list = file.readline().split(",", 10)
 
     file.close()
 
