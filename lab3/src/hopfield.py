@@ -1,9 +1,9 @@
 import numpy as np
 import random
 import copy
+from functions import *
 
 #from functions import *
-
 
 def sign(x):
 
@@ -31,6 +31,7 @@ class Hopfield:
     def __init__(self, num_neurons, has_self_connections):
         self.num_neurons = num_neurons
         self.has_self_connections = has_self_connections
+        self.yippie = 0
         
         #Generate weight matrix
         self.weights = np.random.random((num_neurons, num_neurons))
@@ -46,11 +47,11 @@ class Hopfield:
 
 
     def recall(self, pattern, is_synch, max_iterations):
-        
+        self.yippie += 1
         #Initialize our pattern to the starting states of our neurons
         for i in range(self.num_neurons):
             self.neurons[i] = pattern[i]
-
+        
 
         prev_states = np.zeros_like(self.neurons)
         #update model for multiple time steps
@@ -65,6 +66,7 @@ class Hopfield:
             #Save the current states for comparison next iteration
             prev_states = copy.deepcopy(self.neurons)
 
+
             if is_synch:
                 self.synch_update()
 
@@ -77,21 +79,33 @@ class Hopfield:
     
     def asynch_update(self):
         
-        probe = np.random.permutation(len(self.num_neurons))
+        probe = np.random.permutation(range(self.num_neurons))
 
 
         #For each neuron
         #for i in range(len(self.weights)):
+        counter = 0
         for idx in probe:
 
             #Sum the contribution (weighted sums) from each neighbor
             weighted_sum = 0
             for j in range(len(self.weights[idx])):
-                weighted_sum += self.weights[idx][j] * self.neurons[idx].state 
+                weighted_sum += self.weights[idx][j] * self.neurons[idx]
         
             
             #Update the state of that neuron based on the majority vote of its neighbours
             self.neurons[idx] = sign(weighted_sum)
+
+            #Visualize every hundred updates
+            if (counter%100 == 0):
+                img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+                visualize_img(image=img, image_num=counter, pattern_num=self.yippie, save_to_file=True)
+
+            counter += 1
+
+
+            
+
 
     
 
@@ -100,7 +114,6 @@ class Hopfield:
         self.neurons = vsign(np.matmul(self.weights, self.neurons))
 
                 
-
     
     def train(self, X):
 
