@@ -55,7 +55,7 @@ def visualize_img(image, image_num, pattern_num, save_to_file):
     plt.gray()
 
     if save_to_file:
-        plt.savefig("../out/task_3-2/p" + str(pattern_num) + "/" + str(image_num)+".png")
+        plt.savefig("../out/task_3-2/png/p" + str(pattern_num) + "/" + str(image_num)+".png")
     else:
         plt.show()
 

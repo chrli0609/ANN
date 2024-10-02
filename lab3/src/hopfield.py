@@ -62,23 +62,23 @@ class Hopfield:
 
             else:
                 #Make asynchronous update
-
                 if self.asynch_update(it):
                     break
 
-                img = convert_1024_to_img_dim(self.neurons, img_dim=32)
-                visualize_img(image=img, image_num=iter, pattern_num=self.yippie, save_to_file=True)
+                #img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+                #visualize_img(image=img, image_num=iter, pattern_num=self.yippie, save_to_file=True)
                 
                 
     
     
-    def asynch_update(self, iter):
+    def asynch_update(self, iter_num):
         
         probe = np.random.permutation(range(self.num_neurons))
 
 
         
-        prev_states = np.zeros_like(self.neurons)
+        prev_states = copy.deepcopy(self.neurons)
+
         counter = 0
 
         #For each neuron
@@ -103,13 +103,27 @@ class Hopfield:
 
 
             #Visualize every hundred updates
-            if (counter%100 == 0):
-                img = convert_1024_to_img_dim(self.neurons, img_dim=32)
-                visualize_img(image=img, image_num=counter+iter*10000, pattern_num=self.yippie, save_to_file=True)
+            #if (counter%100 == 0):
+            #    img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+            #    visualize_img(image=img, image_num=counter+iter_num*10000, pattern_num=self.yippie, save_to_file=True)
 
             counter += 1
+
+
+        img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+        print("iter_num", iter_num)
+        print("yippie", self.yippie)
+        visualize_img(image=img, image_num=iter_num, pattern_num=self.yippie, save_to_file=True)
+
+
         
-        return False
+        if np.array_equal(self.neurons, prev_states):
+            print("Optimal solution found for p", self.yippie)
+            return True
+        else:
+            return False
+        
+
 
     
 
