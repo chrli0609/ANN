@@ -31,8 +31,8 @@ print("######################## Make Sure Stored Patterns are Stable ###########
 print("==============================================================================")
 
 
-#for i in range(NUM_PATTERNS_TO_TRAIN):
-#    model.recall(all_patterns[i], is_synch=False, max_iterations=MAX_ITERATIONS)
+for i in range(NUM_PATTERNS_TO_TRAIN):
+    model.recall(all_patterns[i], is_synch=False, max_iterations=MAX_ITERATIONS)
 
 
 
@@ -43,3 +43,5 @@ print("=========================================================================
 
 
 model.recall(all_patterns[9], is_synch=False, max_iterations=MAX_ITERATIONS)
+model.recall(all_patterns[10], is_synch=False, max_iterations=MAX_ITERATIONS)
+

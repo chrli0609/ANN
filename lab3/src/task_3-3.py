@@ -3,27 +3,39 @@ import matplotlib.pyplot as plt
 from hopfield import *
 from functions import *
 
-HAS_SELF_CONNECTION = True
+HAS_SELF_CONNECTION = False
 NUM_NEURONS = 1024
 FILEPATH = "../data/pict.dat"
 IMG_DIM = 32
-NUM_PATTERNS = 11
+NUM_PATTERNS = 4
 SAVE_TO_FILE = False
-MAX_ITERATIONS = 10 
-NUM_ENERGY_MINIMA = 20
+
+
+IS_SYNC = False
+MAX_ITER = 10
+NUM_TRIES = 10**3
 
 
 model = Hopfield(NUM_NEURONS, HAS_SELF_CONNECTION)
 
 training_data = generate_data(FILEPATH, IMG_DIM, is_training=True, num_patterns=NUM_PATTERNS)
 
-visualization_data = generate_data(FILEPATH, IMG_DIM, is_training=False, num_patterns=NUM_PATTERNS)
+#visualization_data = generate_data(FILEPATH, IMG_DIM, is_training=False, num_patterns=NUM_PATTERNS)
 
 model.train(training_data)
 
-energy_matrix = convert_1024_to_img_dim(model.energy, 32)
+print("training data")
+print(training_data.shape)
 
-smallest_energy_vals = np.argpartition(model.energy, NUM_ENERGY_MINIMA)[:NUM_ENERGY_MINIMA]
-np.savetxt("energy_matrix.txt", energy_matrix, fmt="%.6f")
 
-print("smallest_energy_vals", np.sort(model.energy[smallest_energy_vals]))
+
+unique_local_minimas = get_attractors(model, training_data, IS_SYNC, MAX_ITER, NUM_TRIES)
+
+energies_at_local_minima = []
+for lm in unique_local_minimas:
+    energies_at_local_minima.append(model.compute_energy(lm))
+
+
+
+print("local minima energies\n", np.array(energies_at_local_minima))
+

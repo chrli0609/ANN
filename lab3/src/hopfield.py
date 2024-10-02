@@ -3,7 +3,6 @@ import random
 import copy
 from functions import *
 
-#from functions import *
 
 def sign(x):
 
@@ -76,13 +75,15 @@ class Hopfield:
         probe = np.random.permutation(range(self.num_neurons))
 
 
+    
+        counter = 0
         
+        #Save the current states for comparison next iteration
         prev_states = copy.deepcopy(self.neurons)
 
-        counter = 0
-
         #For each neuron
-        for idx in probe:
+        #for idx in probe:
+        for idx in range(self.num_neurons):
             #print("counter",counter)
             #Checks if we have converged
             #if np.array_equal(self.neurons, prev_states):
@@ -90,16 +91,16 @@ class Hopfield:
             #    return True
 
 
-            #Save the current states for comparison next iteration
-            prev_states = copy.deepcopy(self.neurons)
 
             #Sum the contribution (weighted sums) from each neighbor
             weighted_sum = 0
             for j in range(len(self.weights[idx])):
-                weighted_sum += self.weights[idx][j] * self.neurons[idx]
+                weighted_sum += self.weights[idx][j] * self.neurons[j]
+            
     
             #Update the state of that neuron based on the majority vote of its neighbours
             self.neurons[idx] = sign(weighted_sum)
+
 
 
             #Visualize every hundred updates
@@ -110,15 +111,16 @@ class Hopfield:
             counter += 1
 
 
-        img = convert_1024_to_img_dim(self.neurons, img_dim=32)
-        print("iter_num", iter_num)
-        print("yippie", self.yippie)
-        visualize_img(image=img, image_num=iter_num, pattern_num=self.yippie, save_to_file=True)
+        #img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+        #visualize_img(image=img, image_num=iter_num, pattern_num=self.yippie, save_to_file=True)
 
 
-        
+        #print("==============================", iter_num, "==================================")
+        #print("prev_states\t\t", np.array(prev_states), "energy\t", self.compute_energy(prev_states))
+        #print("self.neurons\t\t", np.array(self.neurons), "energy\t", self.compute_energy(self.neurons))
+        #print("elementwise mult\t", np.multiply(np.array(self.neurons), np.array(prev_states)))
+
         if np.array_equal(self.neurons, prev_states):
-            print("Optimal solution found for p", self.yippie)
             return True
         else:
             return False
@@ -127,21 +129,29 @@ class Hopfield:
 
     
 
-    def synch_update(self, iter):
+    def synch_update(self, iter_num):
 
 
         new_neuron_states = vsign(np.matmul(self.weights, self.neurons))
 
         
-        img = convert_1024_to_img_dim(new_neuron_states, img_dim=32)
-        visualize_img(image=img, image_num=iter, pattern_num=self.yippie, save_to_file=True)
+        """img = convert_1024_to_img_dim(new_neuron_states, img_dim=32)
+        visualize_img(image=img, image_num=iter_num, pattern_num=self.yippie, save_to_file=True)"""
+
+
+
+        print("==============================", iter_num, "==================================")
+        print("prev_states\t\t", np.array(self.neurons), "energy\t", self.compute_energy(self.neurons))
+        print("self.neurons\t\t", np.array(new_neuron_states), "energy\t", self.compute_energy(new_neuron_states))
+        print("elementwise mult\t", np.sum(np.multiply(np.array(new_neuron_states), np.array(self.neurons))))
+
 
 
         if np.array_equal(self.neurons, new_neuron_states):
-            print("Optimal solution found for p", self.yippie)
+            #print("Optimal solution found for p", self.yippie)
             return True
         else:
-            self.neurons = new_neuron_states
+            self.neurons = copy.deepcopy(new_neuron_states)
             return False
 
 
@@ -163,12 +173,12 @@ class Hopfield:
              np.fill_diagonal(self.weights, 0)
 
     
-    def compute_energy(self):
+    def compute_energy(self, list_of_neuron_states):
         
         E = 0
-        for i in range(self.num_neurons):
-            for j in range(self.num_neurons):
-                E -= self.weights[i][j] * self.neurons[i]*self.neurons[j]
+        for i in range(len(list_of_neuron_states)):
+            for j in range(len(list_of_neuron_states)):
+                E -= self.weights[i][j] * list_of_neuron_states[i]*list_of_neuron_states[j]
 
         return E
     

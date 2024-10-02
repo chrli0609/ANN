@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+from functions import *
 from hopfield import Hopfield
 
-MAX_ITER = 100
+MAX_ITER = 15
 HAS_SELF_CONNECTIONS = False
-IS_SYNC = True
+IS_SYNC = False
 
 
 
@@ -61,21 +64,7 @@ print("=========================================================================
 ######################## Evaluate number of attractors ########################
 NUM_TRIES = 10**4
 
-random_inputs = np.random.random((NUM_TRIES, len(x1)))
-
-unique_local_mins = []
-for i in range(NUM_TRIES):
-    model.recall(random_inputs[i], IS_SYNC, MAX_ITER)
-
-    # Convert to a list if necessary, for consistency
-    generated_local_min = np.array(model.neurons)
-
-    # Check if the generated local minimum is unique using numpy's efficient array comparison
-    if not any(np.array_equal(generated_local_min, local_min) for local_min in unique_local_mins):
-        unique_local_mins.append(generated_local_min)
-
-print(np.array(unique_local_mins))
-print("Number of unique local minimas (attractors) found were", len(unique_local_mins))
+get_attractors(model, X, IS_SYNC, MAX_ITER, NUM_TRIES)
 
 
 print("==============================================================================")
