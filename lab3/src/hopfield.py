@@ -33,7 +33,9 @@ class Hopfield:
         self.yippie = 0
         
         #Generate weight matrix
-        self.weights = np.random.random((num_neurons, num_neurons))
+        #self.weights = np.random.random((num_neurons, num_neurons))
+        self.weights = np.random.normal(0, 1, size=(num_neurons, num_neurons))
+
         #If no self connection --> set diagonal elements to zero
         if not has_self_connections:
             np.fill_diagonal(self.weights, 0)
@@ -140,10 +142,10 @@ class Hopfield:
 
 
 
-        print("==============================", iter_num, "==================================")
-        print("prev_states\t\t", np.array(self.neurons), "energy\t", self.compute_energy(self.neurons))
-        print("self.neurons\t\t", np.array(new_neuron_states), "energy\t", self.compute_energy(new_neuron_states))
-        print("elementwise mult\t", np.sum(np.multiply(np.array(new_neuron_states), np.array(self.neurons))))
+        #print("==============================", iter_num, "==================================")
+        #print("prev_states\t\t", np.array(self.neurons), "energy\t", self.compute_energy(self.neurons))
+        #print("self.neurons\t\t", np.array(new_neuron_states), "energy\t", self.compute_energy(new_neuron_states))
+        #print("elementwise mult\t", np.sum(np.multiply(np.array(new_neuron_states), np.array(self.neurons))))
 
 
 
