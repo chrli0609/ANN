@@ -9,7 +9,7 @@ from functions import *
 #Data stuff
 FILEPATH = "../data/pict.dat"
 IMG_DIM = 32
-NUM_TRAINING_PATTERNS = 9
+NUM_TRAINING_PATTERNS = 200
 
 #Model params
 HAS_SELF_CONNECTION = False
@@ -50,6 +50,7 @@ else:
 
 
 all_models_list = []
+model_name_list = []
 
 
 percentage_list = [0.1, 0.2, 0.3, 0.4]
@@ -72,6 +73,8 @@ for i in range(2, NUM_TRAINING_PATTERNS):
 
 
 
+    per_noise_lvl = []
+
     # Generate each different level of noise
     for j in range(len(percentage_list)):
         
@@ -85,13 +88,15 @@ for i in range(2, NUM_TRAINING_PATTERNS):
 
 
         #Try to reconstruct each level of noise for every pattern
-        per_noise_lvl_list = []
+        reconstruct_hamming_sum = 0
         for k in range(len(noisy_training_data)):
             #Do recall with distorted data
             model.recall(noisy_training_data[k], IS_SYNC, MAX_ITER)
 
+            #print("hamming(training_data["+str(k)+"], model.neurons)", hamming(training_data[k], model.neurons))
 
-            per_noise_lvl_list.append(hamming(noisy_training_data[k], model.neurons))
+            reconstruct_hamming_sum += hamming(training_data[k], model.neurons)
+
             if USE_PATTERN:
                 #Visualize distorted data
                 img = convert_1024_to_img_dim(noisy_training_data[k], img_dim=32)
@@ -105,17 +110,24 @@ for i in range(2, NUM_TRAINING_PATTERNS):
 
 
         
-        all_models_list.append(per_noise_lvl_list)
+        per_noise_lvl.append(reconstruct_hamming_sum)
+
+
+    all_models_list.append(per_noise_lvl)
 
 
 
 
-
-
+print(all_models_list)
+print()
+print()
 
 from prettytable import PrettyTable
-t = PrettyTable(['Name', '10%', '20%', '30%', '40%'])
+t = PrettyTable(['Num Mem', '10%', '20%', '30%', '40%'])
 for i in range(len(all_models_list)):
-    t.add_rows(all_models_list[i])
+
+    all_models_list[i].insert(0, i+3)
+    
+    t.add_row(all_models_list[i])
 print(t)
 
