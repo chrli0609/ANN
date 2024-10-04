@@ -106,7 +106,7 @@ def get_attractors(model, train_data, IS_SYNC, MAX_ITER, NUM_TRIES):
 
 
 
-def scramble_data(data, percentage, mean, std):
+def scramble_data(data, percentage):
     
     num_rows, num_cols = data.shape
 
@@ -138,7 +138,7 @@ def visualize_img_path(image, folderpath, filename, save_to_file, plot_title="")
     image = image*255
 
  
-    plt.title(plot_title)
+    plt.title(plot_title    )
     plt.imshow(image)
 
     plt.gray()
@@ -150,3 +150,22 @@ def visualize_img_path(image, folderpath, filename, save_to_file, plot_title="")
         plt.savefig(folderpath + filename + ".png")
     else:
         plt.show()
+
+
+
+
+def bipolar_to_binary(data):
+
+    binary_data = np.like(data)
+    for i in range(len(data)):
+        for j in range(len(data[i])):
+            
+            if data[i][j] == -1:
+                binary_value = 0
+            else:
+                binary_value = 1
+
+            binary_data[i][j] = binary_value
+
+
+    return binary_data

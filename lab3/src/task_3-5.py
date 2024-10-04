@@ -9,7 +9,7 @@ from functions import *
 #Data stuff
 FILEPATH = "../data/pict.dat"
 IMG_DIM = 32
-NUM_TRAINING_PATTERNS = 200
+NUM_TRAINING_PATTERNS = 9
 
 #Model params
 HAS_SELF_CONNECTION = False
@@ -17,19 +17,23 @@ NUM_NEURONS = 1024
 IS_SYNC = True
 MAX_ITER = 5
 
-#Noise params
-NOISE_MEAN = 0
-NOISE_STD = 1
 
 #Outputs
 SAVE_TO_FILE = True
 
-USE_PATTERN = False
 
 
+###############################################################
+###############################################################
+###############################################################
+###############################################################
+USE_PATTERN = False                      # <---------------- LOOK HEREEREREERERERR
+ADD_BIAS = False
 
-
-
+###############################################################
+###############################################################
+###############################################################
+###############################################################
 
 
 if USE_PATTERN:
@@ -46,6 +50,10 @@ if USE_PATTERN:
     all_data = generate_data(FILEPATH, IMG_DIM, is_training=True, num_patterns=NUM_TRAINING_PATTERNS)
 else:
     all_data = np.random.choice([-1, 1], size=(NUM_TRAINING_PATTERNS, NUM_NEURONS))
+
+
+if ADD_BIAS:
+    all_data = all_data + np.sign(0.5 + np.random.randn(300, 100))
 
 
 
@@ -82,7 +90,7 @@ for i in range(2, NUM_TRAINING_PATTERNS):
         #Get the noisy version of the training data
         percentage = np.round(percentage_list[j], 2)
 
-        noisy_training_data = scramble_data(training_data, percentage, NOISE_MEAN, NOISE_STD)
+        noisy_training_data = scramble_data(training_data, percentage)
 
 
 

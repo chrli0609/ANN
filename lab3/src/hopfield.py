@@ -48,11 +48,22 @@ class Hopfield:
         
         
 
-    def recall(self, pattern, is_synch, max_iterations):
+    def recall(self, pattern, is_synch, max_iterations, SHOW_IMG=False):
         self.yippie += 1
         #Initialize our pattern to the starting states of our neurons
         for i in range(self.num_neurons):
             self.neurons[i] = pattern[i]
+
+
+
+        if SHOW_IMG:
+            img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+            visualize_img(image=img, image_num=0, pattern_num=self.yippie, save_to_file=True)
+
+
+
+
+        
         
         #update model for multiple time steps
         for it in range(max_iterations):
@@ -66,8 +77,9 @@ class Hopfield:
                 if self.asynch_update(it):
                     break
 
-                #img = convert_1024_to_img_dim(self.neurons, img_dim=32)
-                #visualize_img(image=img, image_num=iter, pattern_num=self.yippie, save_to_file=True)
+                if SHOW_IMG:
+                    img = convert_1024_to_img_dim(self.neurons, img_dim=32)
+                    visualize_img(image=img, image_num=it+1, pattern_num=self.yippie, save_to_file=True)
                 
                 
     

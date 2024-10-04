@@ -52,7 +52,7 @@ for i in range(len(xd)):
     print("Noisy input:\t", xd[i], "\t", np.count_nonzero(X[i]-xd[i]), "bit errors")
     print("Clean input:\t", X[i])
     print("Predicted:\t", pred_d[i])
-    print("acc score vs noisy", 1-np.count_nonzero(pred_d[i]-xd[i])/len(xd[i]))
+    #print("acc score vs noisy", 1-np.count_nonzero(pred_d[i]-xd[i])/len(xd[i]))
     print("acc score vs clean", 1-np.count_nonzero(pred_d[i]-X[i])/len(X[i]))
     print("-------------------------------")
 
@@ -88,7 +88,7 @@ for i in range(len(xw)):
     print("Noisy input:\t", xw[i], "\t", np.count_nonzero(X[i]-xw[i]), "bit errors")
     print("Clean input:\t", X[i])
     print("Predicted:\t", pred_d[i])
-    print("acc score vs noisy", 1-np.count_nonzero(pred_d[i]-xw[i])/len(xw[i]))
+    #print("acc score vs noisy", 1-np.count_nonzero(pred_d[i]-xw[i])/len(xw[i]))
     print("acc score vs clean", 1-np.count_nonzero(pred_d[i]-X[i])/len(X[i]))
     print("-------------------------------")
 
