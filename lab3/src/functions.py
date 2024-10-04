@@ -169,3 +169,50 @@ def bipolar_to_binary(data):
 
 
     return binary_data
+
+
+
+def prettytable_to_latex(pretty_table, filepath):
+    """
+    Convert a PrettyTable object to LaTeX table format.
+    
+    Parameters:
+        pretty_table (PrettyTable): The PrettyTable object to convert.
+
+    Returns:
+        str: A LaTeX table as a string.
+    """
+    # Start with the LaTeX table declaration
+    latex_table = "\\begin{table}[htbp]\n\\centering\n\\begin{tabular}{|"
+    
+    # Add column specifiers (one for each column, using | for borders)
+    latex_table += " | ".join(["c"] * len(pretty_table.field_names)) + "|}\n\\hline\n"
+    
+    # Add table headers
+    latex_table += " & ".join(pretty_table.field_names) + " \\\\\n\\hline\n"
+    
+    # Add each row of the table
+    for row in pretty_table._rows:  # Accessing rows without printing table borders
+        latex_table += " & ".join(str(x) for x in row) + " \\\\\n\\hline\n"
+    
+    # End the LaTeX table
+    latex_table += "\\end{tabular}\n\\caption{Your Caption Here}\n\\end{table}"
+
+    with open(filepath, "w") as file:
+        file.write(latex_table)
+
+
+
+
+def flip_bits(lst, num_flips):
+    # Ensure num_flips doesn't exceed the list length
+    num_flips = min(num_flips, len(lst))
+    
+    # Randomly select indices to flip
+    flip_indices = random.sample(range(len(lst)), num_flips)
+    
+    # Flip the bits at the selected indices
+    for i in flip_indices:
+        lst[i] = 1 if lst[i] == -1 else -1
+    
+    return lst

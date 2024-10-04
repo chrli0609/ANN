@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.spatial.distance import hamming
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 
 
 from functions import *
@@ -53,7 +56,7 @@ for NUM_TRAINING_PATTERNS in range(1, MAX_NUM_PATTERNS_TO_TRY):
     #Iterate over recall for different values of THETA
     theta_list = np.arange(-1, 1.1, 0.25)
     #theta_list = np.arange(-1, 1.1, 0.5)
-    print(theta_list)
+    #print(theta_list)
 
     hamming_score_per_theta_list = []
     for i in range(len(theta_list)):
@@ -73,11 +76,22 @@ for NUM_TRAINING_PATTERNS in range(1, MAX_NUM_PATTERNS_TO_TRY):
 
 
 
-    plt.plot(theta_list, hamming_score_per_theta_list)
-    plt.title("Hamming score vs Theta")
-    plt.show()
+    #plt.plot(theta_list, hamming_score_per_theta_list)
+    #plt.title("Hamming score vs Theta")
+    #plt.show()
 
     hamming_per_num_memory_list.append(hamming_score_per_theta_list)
+
+
+
+
+
+
+
+# Convert 2D list to a NumPy array
+data_2d_np = np.array(hamming_per_num_memory_list)
+
+
 
 
 
@@ -91,3 +105,54 @@ for i in range(len(hamming_per_num_memory_list)):
     
     t.add_row(hamming_per_num_memory_list[i])
 print(t)
+
+
+
+prettytable_to_latex(t, "../out/task_3-6/latex_hd_rho_"+str(round(100*rho, 2))+".txt")
+
+
+
+
+num_memories = []
+for i in range(len(hamming_per_num_memory_list)):
+
+    num_memories.append(i+3)
+
+
+num_memories = np.linspace(3, 20, data_2d_np.shape[0])
+
+
+
+
+# Create a meshgrid for X and Y
+X, Y = np.meshgrid(theta_list, num_memories)
+
+
+
+
+# Plotting the 3D surface
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Plot the surface (Z is the 2D array)
+surf = ax.plot_surface(X, Y, data_2d_np, cmap='viridis')
+
+# Labels
+fig.suptitle("Average Hamming Distance over reconstructed patterns vs Num memories stored and Theta\nRho: " + str(round(rho,3)))
+ax.set_ylabel('Num Memories')
+ax.set_xlabel('Theta List')
+ax.set_zlabel('Hamming Distance')
+
+
+# Set Z-axis limits
+ax.set_zlim(0.0, 1.0)
+
+# Set Z-axis ticks to include 0.1 increments
+ax.zaxis.set_ticks(np.arange(0.0, 1.1, 0.1))
+
+
+
+
+
+# Show plot
+plt.show()
