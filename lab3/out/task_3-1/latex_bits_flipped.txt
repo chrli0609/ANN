@@ -1,0 +1,27 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|c | c | c | c|}
+\hline
+Num Bits Flipped & x1 & x2 & x3 \\
+\hline
+0 & 0.0 & 0.0 & 0.0 \\
+\hline
+1 & 0.125 & 0.125 & 0.125 \\
+\hline
+2 & 0.25 & 0.375 & 0.0 \\
+\hline
+3 & 0.375 & 0.125 & 0.125 \\
+\hline
+4 & 0.25 & 0.25 & 0.125 \\
+\hline
+5 & 0.375 & 0.25 & 0.25 \\
+\hline
+6 & 0.375 & 0.375 & 0.375 \\
+\hline
+7 & 0.5 & 0.5 & 0.375 \\
+\hline
+8 & 0.5 & 0.5 & 0.375 \\
+\hline
+\end{tabular}
+\caption{Your Caption Here}
+\end{table}
