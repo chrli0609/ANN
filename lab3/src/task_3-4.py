@@ -22,10 +22,6 @@ IS_SYNC = True
 MAX_ITER = 5
 
 
-#Noise params
-NOISE_MEAN = 0
-NOISE_STD = 1
-
 
 
 #Outputs
@@ -40,11 +36,10 @@ all_data = generate_data(FILEPATH, IMG_DIM, is_training=True, num_patterns=NUM_P
 training_data = all_data[0:NUM_TRAIN_PATTERNS,:]
 
 
-
-percentage_list = np.arange(0, 1, 0.1)
+percentage_list = np.arange(0.3, 0.5, 0.01)
 for j in range(len(percentage_list)):
     percentage = np.round(percentage_list[j], 2)
-    noisy_training_data = scramble_data(training_data, percentage, NOISE_MEAN, NOISE_STD)
+    noisy_training_data = scramble_data(training_data, percentage)
 
     
     
