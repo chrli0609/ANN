@@ -1,4 +1,5 @@
 from util import *
+import random
 
 class RestrictedBoltzmannMachine():
     '''
@@ -79,7 +80,22 @@ class RestrictedBoltzmannMachine():
         
         n_samples = visible_trainset.shape[0]
 
+        
         for it in range(n_iterations):
+
+            
+            #Awake
+            _, h_states = self.get_h_given_v(visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:])
+
+
+
+            #Asleep
+            _, v_states = self.get_v_given_h(hidden_minibatch)
+
+            
+                
+            cum_sum = cum_sum/n_samples
+            
 
 	    # [TODO TASK 4.1] run k=1 alternating Gibbs sampling : v_0 -> h_0 ->  v_1 -> h_1.
             # you may need to use the inference functions 'get_h_given_v' and 'get_v_given_h'.
@@ -146,8 +162,49 @@ class RestrictedBoltzmannMachine():
         n_samples = visible_minibatch.shape[0]
 
         # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of hidden layer (replace the zeros below) 
+
         
-        return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
+
+
+        probability_of_activation_all_neurons_of_all_samples = []
+        activation_of_all_neurons_of_all_samples = []
+        for k in range(n_samples):
+            
+
+            probability_on_all_hidden_neurons = [None] * self.ndim_hidden
+            activation_all_hidden_neurons = [None] * self.ndim_hidden
+            for j in range(self.ndim_hidden):
+                
+
+                #Compute contributions from all neighboring nodes
+                weighted_sum = 0
+                for i in range(self.ndim_visible):
+                    weighted_sum += visible_minibatch[k][i] * self.weight_vh[i][j]
+                
+                #Compute probability of hidden neurons j is +1
+                probability_on_all_hidden_neurons[j] = 1 / (1 + np.exp(-self.bias_h - weighted_sum))
+
+
+                #Throw dice to decide if state should be +1 or -1
+                r = random.random()
+
+                if r < probability_on_all_hidden_neurons[j]:
+                    activation_all_hidden_neurons[j] = 1
+                else:
+                    probability_on_all_hidden_neurons[j] = 0
+            
+            
+
+            #Append the probability of hidden neurons = 1
+            probability_of_activation_all_neurons_of_all_samples.append(probability_on_all_hidden_neurons)
+            activation_of_all_neurons_of_all_samples.append(activation_all_hidden_neurons)
+                
+        
+
+        return np.array(probability_of_activation_all_neurons_of_all_samples), np.array(activation_of_all_neurons_of_all_samples)
+        #return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
+
+
 
 
     def get_v_given_h(self,hidden_minibatch):
@@ -185,9 +242,44 @@ class RestrictedBoltzmannMachine():
                         
             # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass and zeros below)             
 
-            pass
+            probability_of_activation_all_neurons_of_all_samples = []
+            activation_of_all_neurons_of_all_samples = []
+            for k in range(n_samples):
+                
+
+                probability_on_all_visible_neurons = [None] * self.ndim_visible
+                activation_all_visible_neurons = [None] * self.ndim_visible
+                for i in range(self.ndim_visible):
+                    
+
+                    #Compute contributions from all neighboring nodes
+                    weighted_sum = 0
+                    for j in range(self.ndim_hidden):
+                        weighted_sum += self.weight_vh[i][j] * hidden_minibatch[k][j]
+                    
+                    #Compute probability of hidden neurons j is +1
+                    probability_on_all_visible_neurons[j] = 1 / (1 + np.exp(-self.bias_v - weighted_sum))
+
+
+                    #Throw dice to decide if state should be +1 or -1
+                    r = random.random()
+
+                    if r < probability_on_all_visible_neurons[j]:
+                        activation_all_visible_neurons[j] = 1
+                    else:
+                        probability_on_all_visible_neurons[j] = 0
+                
+                
+
+                #Append the probability of hidden neurons = 1
+                probability_of_activation_all_neurons_of_all_samples.append(probability_on_all_visible_neurons)
+                activation_of_all_neurons_of_all_samples.append(activation_all_visible_neurons)
+                
         
-        return np.zeros((n_samples,self.ndim_visible)), np.zeros((n_samples,self.ndim_visible))
+
+        return np.array(probability_of_activation_all_neurons_of_all_samples), np.array(activation_of_all_neurons_of_all_samples)
+        
+        #return np.zeros((n_samples,self.ndim_visible)), np.zeros((n_samples,self.ndim_visible))
 
 
     
@@ -263,6 +355,8 @@ class RestrictedBoltzmannMachine():
             pass
             
         return np.zeros((n_samples,self.ndim_visible)), np.zeros((n_samples,self.ndim_visible))        
+    
+    
         
     def update_generate_params(self,inps,trgs,preds):
         
