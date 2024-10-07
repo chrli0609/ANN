@@ -1,5 +1,6 @@
 from util import *
 import random
+import numpy as np
 
 class RestrictedBoltzmannMachine():
     '''
@@ -77,24 +78,50 @@ class RestrictedBoltzmannMachine():
         """
 
         print ("learning CD1")
+
+        #visible_trainset = visible_trainset[0:100,:]
         
         n_samples = visible_trainset.shape[0]
 
+
+        if n_iterations * self.batch_size != n_samples:
+            print("AN ERROR HAS OCCURREEEEEEDDDD: n_iterations * self.batch_size != n_samples")
         
+        #v_states_0 = visible_trainset
+        #h_states_0 = [None] * n_samples
+        #v_states_1 = [None] * n_samples
+        #h_states_1 = [None] * n_samples
+
         for it in range(n_iterations):
 
+
+            v_batch_states_0 = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
             
             #Awake
-            _, h_states = self.get_h_given_v(visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:])
-
-
+            _, h_batch_states_0 = self.get_h_given_v(v_batch_states_0)
+            #for i in range(self.batch_size):
+            #    h_states_0[i] = h_batch_states_0
+            
 
             #Asleep
-            _, v_states = self.get_v_given_h(hidden_minibatch)
+            _, v_batch_states_1 = self.get_v_given_h(h_batch_states_0)
+            #for i in range(self.batch_size):
+            #    v_states_1[i] = v_batch_states
+
+
+
+            #Awake 2
+            _, h_batch_states_1 = self.get_h_given_v(v_batch_states_1)
+            #for i in range(self.batch_size):
+            #    h_states_1[i] = h_batch_states_1
+
 
             
-                
-            cum_sum = cum_sum/n_samples
+            #self.update_params(v_states_0, h_states_0, v_states_1, h_states_1)
+            self.update_params(v_batch_states_0, h_batch_states_0, v_batch_states_1, h_batch_states_1, n_samples)
+
+            
+            
             
 
 	    # [TODO TASK 4.1] run k=1 alternating Gibbs sampling : v_0 -> h_0 ->  v_1 -> h_1.
@@ -118,7 +145,7 @@ class RestrictedBoltzmannMachine():
         return
     
 
-    def update_params(self,v_0,h_0,v_k,h_k):
+    def update_params(self,v_0,h_0,v_k,h_k, n_samples):
 
         """Update the weight and bias parameters.
 
@@ -133,10 +160,38 @@ class RestrictedBoltzmannMachine():
         """
 
         # [TODO TASK 4.1] get the gradients from the arguments (replace the 0s below) and update the weight and bias parameters
+
+
+
+
+
+        delta_bias_v = np.zeros(self.ndim_visible)
+        delta_bias_h = np.zeros(self.ndim_hidden)
         
-        self.delta_bias_v += 0
-        self.delta_weight_vh += 0
-        self.delta_bias_h += 0
+        delta_weight = np.zeros((v_0.shape[1], h_0.shape[1]))
+
+        # Update rule for the weights based on Contrastive Divergence
+        # Calculate the outer product for each sample and average over all samples
+        for n in range(self.batch_size):
+
+            #Bias
+            delta_bias_v += (v_0[n] - v_k[n]) / n_samples
+            delta_bias_h += (h_0[n] - h_k[n]) / n_samples
+                
+
+            positive_grad = np.outer(v_0[n], h_0[n])  # Data-dependent term
+            negative_grad = np.outer(v_k[n], h_k[n])  # Model-dependent term
+
+
+            delta_weight += (positive_grad - negative_grad) / n_samples
+
+
+        
+
+        
+        self.delta_bias_v += delta_bias_v
+        self.delta_weight_vh += delta_weight
+        self.delta_bias_h += delta_bias_h
         
         self.bias_v += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
@@ -161,6 +216,7 @@ class RestrictedBoltzmannMachine():
 
         n_samples = visible_minibatch.shape[0]
 
+
         # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of hidden layer (replace the zeros below) 
 
         
@@ -182,16 +238,17 @@ class RestrictedBoltzmannMachine():
                     weighted_sum += visible_minibatch[k][i] * self.weight_vh[i][j]
                 
                 #Compute probability of hidden neurons j is +1
-                probability_on_all_hidden_neurons[j] = 1 / (1 + np.exp(-self.bias_h - weighted_sum))
+                probability_on_all_hidden_neurons[j] = 1 / (1 + np.exp(-self.bias_h[j] - weighted_sum))
 
 
                 #Throw dice to decide if state should be +1 or -1
                 r = random.random()
-
+                
+                #print("probability_on_all_hidden_neurons[j]", np.array(probability_on_all_hidden_neurons[j]).shape)
                 if r < probability_on_all_hidden_neurons[j]:
                     activation_all_hidden_neurons[j] = 1
                 else:
-                    probability_on_all_hidden_neurons[j] = 0
+                    activation_all_hidden_neurons[j] = 0
             
             
 
@@ -252,22 +309,25 @@ class RestrictedBoltzmannMachine():
                 for i in range(self.ndim_visible):
                     
 
+                    #print("self.weight_vh", self.weight_vh)
+                    #print("hidden_minibatch", hidden_minibatch)
+                    
                     #Compute contributions from all neighboring nodes
                     weighted_sum = 0
                     for j in range(self.ndim_hidden):
                         weighted_sum += self.weight_vh[i][j] * hidden_minibatch[k][j]
                     
                     #Compute probability of hidden neurons j is +1
-                    probability_on_all_visible_neurons[j] = 1 / (1 + np.exp(-self.bias_v - weighted_sum))
+                    probability_on_all_visible_neurons[i] = 1 / (1 + np.exp(-self.bias_v[i] - weighted_sum))
 
 
                     #Throw dice to decide if state should be +1 or -1
                     r = random.random()
 
-                    if r < probability_on_all_visible_neurons[j]:
-                        activation_all_visible_neurons[j] = 1
+                    if r < probability_on_all_visible_neurons[i]:
+                        activation_all_visible_neurons[i] = 1
                     else:
-                        probability_on_all_visible_neurons[j] = 0
+                        activation_all_visible_neurons[i] = 0
                 
                 
 

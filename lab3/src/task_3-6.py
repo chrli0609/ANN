@@ -32,8 +32,8 @@ for NUM_TRAINING_PATTERNS in range(1, MAX_NUM_PATTERNS_TO_TRY):
 
     #Create binary data with 10% activation probability
     #all_data = np.random.choice(a=[0, 1], p=[0.9, 0.1], size=(NUM_TRAINING_PATTERNS, NUM_NEURONS))
-    #all_data = np.random.choice(a=[0, 1], p=[0.95, 0.05], size=(NUM_TRAINING_PATTERNS, NUM_NEURONS))
-    all_data = np.random.choice(a=[0, 1], p=[0.99, 0.01], size=(NUM_TRAINING_PATTERNS, NUM_NEURONS))
+    all_data = np.random.choice(a=[0, 1], p=[0.95, 0.05], size=(NUM_TRAINING_PATTERNS, NUM_NEURONS))
+    #all_data = np.random.choice(a=[0, 1], p=[0.99, 0.01], size=(NUM_TRAINING_PATTERNS, NUM_NEURONS))
 
     #Compute rho
     rho = 0 
