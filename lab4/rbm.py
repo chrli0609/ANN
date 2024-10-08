@@ -94,8 +94,23 @@ class RestrictedBoltzmannMachine():
 
         for it in range(n_iterations):
 
+            v_batch_probability_on = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
 
-            v_batch_states_0 = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
+
+            v_batch_states_0 = np.zeros((self.batch_size, self.ndim_visible))
+
+            for i in range(self.batch_size):
+                for j in range(self.ndim_visible):
+
+                    r = random.random()
+                    if r < v_batch_probability_on[i][j]:
+                        v_batch_states_0[i][j] = 1
+                    else:
+                        v_batch_states_0[i][j] = 0
+ 
+
+
+            
             
             #Awake
             _, h_batch_states_0 = self.get_h_given_v(v_batch_states_0)
@@ -163,7 +178,11 @@ class RestrictedBoltzmannMachine():
 
 
 
-
+        print("Updating params")
+        print("v_0\n", v_0.tolist(), "\n", np.sum(v_0))
+        print("h_0\n", h_0, "\n", np.sum(h_0))
+        print("v_k\n", v_k, "\n", np.sum(v_k))
+        print("h_k\n", h_k, "\n", np.sum(h_k))
 
         delta_bias_v = np.zeros(self.ndim_visible)
         delta_bias_h = np.zeros(self.ndim_hidden)
