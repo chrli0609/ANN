@@ -178,11 +178,11 @@ class RestrictedBoltzmannMachine():
 
 
 
-        print("Updating params")
-        print("v_0\n", v_0.tolist(), "\n", np.sum(v_0))
-        print("h_0\n", h_0, "\n", np.sum(h_0))
-        print("v_k\n", v_k, "\n", np.sum(v_k))
-        print("h_k\n", h_k, "\n", np.sum(h_k))
+        #print("Updating params")
+        #print("v_0\n", v_0.tolist(), "\n", np.sum(v_0))
+        #print("h_0\n", h_0, "\n", np.sum(h_0))
+        #print("v_k\n", v_k, "\n", np.sum(v_k))
+        #print("h_k\n", h_k, "\n", np.sum(h_k))
 
         delta_bias_v = np.zeros(self.ndim_visible)
         delta_bias_h = np.zeros(self.ndim_hidden)
