@@ -58,6 +58,9 @@ class RestrictedBoltzmannMachine():
         self.momentum = 0.7
 
         self.print_period = 5000
+        #self.print_period = 60
+
+        self.debug_weights = []
         
         self.rf = { # receptive-fields. Only applicable when visible layer is input data
             "period" : 5000, # iteration period to visualize
@@ -135,9 +138,7 @@ class RestrictedBoltzmannMachine():
             #self.update_params(v_states_0, h_states_0, v_states_1, h_states_1)
             self.update_params(v_batch_states_0, h_batch_states_0, v_batch_states_1, h_batch_states_1, n_samples)
 
-            
-            
-            
+
 
 	    # [TODO TASK 4.1] run k=1 alternating Gibbs sampling : v_0 -> h_0 ->  v_1 -> h_1.
             # you may need to use the inference functions 'get_h_given_v' and 'get_v_given_h'.
@@ -205,6 +206,8 @@ class RestrictedBoltzmannMachine():
             delta_weight += (positive_grad - negative_grad) / n_samples
 
 
+        print("norm(delta_weights)", np.linalg.norm(delta_weight))
+
         
 
         
@@ -215,6 +218,9 @@ class RestrictedBoltzmannMachine():
         self.bias_v += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
         self.bias_h += self.delta_bias_h
+
+        #================================L2 NORM BETWEEN DELTA W AND ORIGIN EACH SAMPLE =================================
+        self.debug_weights.append(np.linalg.norm(delta_weight))
         
         return
 
