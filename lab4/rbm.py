@@ -85,7 +85,7 @@ class RestrictedBoltzmannMachine():
 
         #visible_trainset = visible_trainset[0:100,:]
         
-        print("visible_trainset", visible_trainset.__class__)
+        #print("visible_trainset", visible_trainset.__class__)
         
         n_samples = visible_trainset.shape[0]
 
@@ -123,6 +123,7 @@ class RestrictedBoltzmannMachine():
             
             
             #Awake
+            
             _, h_batch_states_0 = self.get_h_given_v(v_batch_states_0)
             #for i in range(self.batch_size):
             #    h_states_0[i] = h_batch_states_0
@@ -147,11 +148,11 @@ class RestrictedBoltzmannMachine():
 
 
 
-	    # [TODO TASK 4.1] run k=1 alternating Gibbs sampling : v_0 -> h_0 ->  v_1 -> h_1.
+	    # [DONE TASK 4.1] run k=1 alternating Gibbs sampling : v_0 -> h_0 ->  v_1 -> h_1.
             # you may need to use the inference functions 'get_h_given_v' and 'get_v_given_h'.
             # note that inference methods returns both probabilities and activations (samples from probablities) and you may have to decide when to use what.
 
-            # [TODO TASK 4.1] update the parameters using function 'update_params'
+            # [DONE TASK 4.1] update the parameters using function 'update_params'
             
             # visualize once in a while when visible layer is input images
             
@@ -182,7 +183,7 @@ class RestrictedBoltzmannMachine():
            all args have shape (size of mini-batch, size of respective layer)
         """
 
-        # [TODO TASK 4.1] get the gradients from the arguments (replace the 0s below) and update the weight and bias parameters
+        # [DONE TASK 4.1] get the gradients from the arguments (replace the 0s below) and update the weight and bias parameters
 
 
         #print("Updating params")
@@ -261,7 +262,7 @@ class RestrictedBoltzmannMachine():
         n_samples = visible_minibatch.shape[0]
 
 
-        # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of hidden layer (replace the zeros below) 
+        # [DONE TASK 4.1] compute probabilities and activations (samples from probabilities) of hidden layer (replace the zeros below) 
 
         # Matrix-based implementation for all samples
         # Compute the weighted sum for all hidden neurons for all samples using matrix multiplication
@@ -311,7 +312,7 @@ class RestrictedBoltzmannMachine():
             """
             
 
-            # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass below). \
+            # [DONE TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass below). \
             # Note that this section can also be postponed until TASK 4.2, since in this task, stand-alone RBMs do not contain labels in visible layer.
             
             #1. Compute updated weighted sums from lvl 1 neighbors
@@ -326,50 +327,64 @@ class RestrictedBoltzmannMachine():
             # Compute weighted sums for all samples and all visible neurons at once using matrix multiplication
             # Each row of the result corresponds to a sample
             weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_vh.T) + self.bias_v
+            #print("weighted_sum_all_samples", weighted_sum_all_samples.shape)
 
-            # Compute the probability of activation for all visible neurons for all samples (vectorized)
-            probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+            
 
 
             #Split pen and label units
-            pen_units_probabilities = probability_on_all_visible_neurons_all_samples[:-self.n_labels,:]
-            label_units_probabilities = probability_on_all_visible_neurons_all_samples[-self.n_labels:,:]
+            pen_units_weighted_sum = weighted_sum_all_samples[:, :-self.n_labels]
+            label_units_weighted_sum = weighted_sum_all_samples[:, -self.n_labels:]
 
 
             ######################################
             ###### Handle Penultimate Units ######
             ######################################
-            #probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-pen_units))
+            # Compute the probability of activation for all visible neurons for all samples (vectorized)
+
+            probability_on_all_pen_neurons_all_samples = 1 / (1 + np.exp(-pen_units_weighted_sum))
 
             # Generate random values for each visible neuron of every sample for activation decision
             random_values = np.random.rand(n_samples, self.ndim_visible-self.n_labels)
 
+
             # Determine activation based on probability and random values (vectorized)
-            activation_all_pen_units = (random_values < pen_units_probabilities).astype(int)
+            activation_all_pen_units = (random_values < probability_on_all_pen_neurons_all_samples).astype(int)
 
 
             ################################
             ###### Handle Label Units ######
             ################################
-            activation_all_label_units = softmax(label_units_probabilities)
+            
+            probability_all_label_units_all_samples = softmax(label_units_weighted_sum)
+                        
+            # Step 1: Find the index of the maximum value along the second axis (axis=1)
+            max_indices = np.argmax(probability_all_label_units_all_samples, axis=1)
+
+            # Step 2: Create a one-hot encoded matrix with the same shape as the original probabilities
+            activation_all_label_units = np.zeros_like(probability_all_label_units_all_samples)
+
+            # Step 3: Set the max index to 1 for each sample
+            activation_all_label_units[np.arange(probability_all_label_units_all_samples.shape[0]), max_indices] = 1
 
 
 
             #####################################################
             ###### Concatenate Penultimate and Label units ######
             #####################################################
-            activation_all_visible_neurons_all_samples = np.concatenate((activation_all_pen_units, activation_all_label_units), axis=0)
+            probability_all_visible_neurons_all_samples = np.concatenate((probability_on_all_pen_neurons_all_samples, probability_all_label_units_all_samples), axis=1)
+            activation_all_visible_neurons_all_samples = np.concatenate((activation_all_pen_units, activation_all_label_units), axis=1)
 
 
 
             # Return the probabilities and activations for all samples
-            return probability_on_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples
+            return probability_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples
             
 
             
         else:
                         
-            # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass and zeros below)             
+            # [DONE TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass and zeros below)             
 
             # Compute weighted sums for all samples and all visible neurons at once using matrix multiplication
             # Each row of the result corresponds to a sample
@@ -416,7 +431,7 @@ class RestrictedBoltzmannMachine():
 
         n_samples = visible_minibatch.shape[0]
 
-        # [TODO TASK 4.2] perform same computation as the function 'get_h_given_v' but with directed connections (replace the zeros below) 
+        # [DONE TASK 4.2] perform same computation as the function 'get_h_given_v' but with directed connections (replace the zeros below) 
 
 
 
@@ -474,7 +489,7 @@ class RestrictedBoltzmannMachine():
             to get activities. The probabilities as well as activities can then be concatenated back into a normal visible layer.
             """
             
-            # [TODO TASK 4.2] Note that even though this function performs same computation as 'get_v_given_h' but with directed connections,
+            # [DONE TASK 4.2] Note that even though this function performs same computation as 'get_v_given_h' but with directed connections,
             # this case should never be executed : when the RBM is a part of a DBN and is at the top, it will have not have directed connections.
             # Appropriate code here is to raise an error (replace pass below)
 
@@ -486,7 +501,7 @@ class RestrictedBoltzmannMachine():
             
         else:
                         
-            # [TODO TASK 4.2] performs same computaton as the function 'get_v_given_h' but with directed connections (replace the pass and zeros below)             
+            # [DONE TASK 4.2] performs same computaton as the function 'get_v_given_h' but with directed connections (replace the pass and zeros below)             
 
             # Compute weighted sums for all samples and all visible neurons at once using matrix multiplication
             # Each row of the result corresponds to a sample
@@ -523,7 +538,7 @@ class RestrictedBoltzmannMachine():
            all args have shape (size of mini-batch, size of respective layer)
         """
 
-        # [TODO TASK 4.3] find the gradients from the arguments (replace the 0s below) and update the weight and bias parameters.
+        # [DON'T DO TASK 4.3] find the gradients from the arguments (replace the 0s below) and update the weight and bias parameters.
         
         self.delta_weight_h_to_v += 0
         self.delta_bias_v += 0
@@ -544,7 +559,7 @@ class RestrictedBoltzmannMachine():
            all args have shape (size of mini-batch, size of respective layer)
         """
 
-        # [TODO TASK 4.3] find the gradients from the arguments (replace the 0s below) and update the weight and bias parameters.
+        # [DON'T DO TASK 4.3] find the gradients from the arguments (replace the 0s below) and update the weight and bias parameters.
 
         self.delta_weight_v_to_h += 0
         self.delta_bias_h += 0

@@ -2,6 +2,8 @@ import copy
 
 from util import *
 from rbm import RestrictedBoltzmannMachine
+import numpy as np
+import matplotlib.pyplot as plt
 
 class DeepBeliefNet():    
 
@@ -73,11 +75,42 @@ class DeepBeliefNet():
         # and read out the labels (replace pass below and 'predicted_lbl' to your predicted labels).
         # NOTE : inferring entire train/test set may require too much compute memory (depends on your system). In that case, divide into mini-batches.
         
+
+        #1. Input true_img to visible layaer of rbm[vis--hid]
+        #2. Get Hidden probabilities of rbm[vis--hid]
+        prob_hidden, _ = self.rbm_stack["vis--hid"].get_h_given_v_dir(visible_minibatch=true_img)
+        
+        #3. Set Hidden probabilities of rbm[vis--hid] to visible nodes of rbm[hid--pen]
+        #4. Get Hidden Probabilities of rbm[hid--pen]
+        prob_pen, _ = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=prob_hidden)
+        
+        
+        #5. Set hidden probabilities of rbm[hid--pen] to visible nodes of rbm[pen+lbl--top]
+        prob_pen_lbl = np.concatenate((prob_pen, lbl), axis=1)
+        
+        
+
         for _ in range(self.n_gibbs_recog):
 
-            pass
+            #--> prev iter get_h_given_v
+            #get_v_given_h
+            #get_h_given_v     --> next iter
 
-        predicted_lbl = np.zeros(true_lbl.shape)
+            prob_top_hidden_0, _ = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=prob_pen_lbl)
+
+            prob_top_visible_1, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=prob_top_hidden_0)
+
+            prob_top_hidden_1, _ = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=prob_top_visible_1)
+
+
+            prob_pen_lbl, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=prob_top_hidden_1)
+
+
+
+
+
+        predicted_lbl = sample_categorical(softmax(prob_pen_lbl[:,-self.rbm_stack["pen+lbl--top"].n_labels:]))
+        #predicted_lbl = np.zeros(true_lbl.shape)
             
         print ("accuracy = %.2f%%"%(100.*np.mean(np.argmax(predicted_lbl,axis=1)==np.argmax(true_lbl,axis=1))))
         
@@ -110,7 +143,7 @@ class DeepBeliefNet():
             
             records.append( [ ax.imshow(vis.reshape(self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True, interpolation=None) ] )
             
-        anim = stitch_video(fig,records).save("%s.generate%d.mp4"%(name,np.argmax(true_lbl)))            
+        anim = stitch_video(fig,records).save("out/dbn/%s.generate%d.mp4"%(name,np.argmax(true_lbl)))            
             
         return
 
@@ -139,16 +172,15 @@ class DeepBeliefNet():
 
         except IOError :
 
-            # [TODO TASK 4.2] use CD-1 to train all RBMs greedily
+            # [PROBABLY DONE TASK 4.2] use CD-1 to train all RBMs greedily
         
             print ("training vis--hid")
             """ 
             CD-1 training for vis--hid 
             """            
-
             self.rbm_stack["vis--hid"].cd1(visible_trainset=vis_trainset, n_iterations=n_iterations)
 
-            hidden_states_vis2hid = copy.deepcopy(self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset))
+            hidden_states_vis2hid = copy.deepcopy(self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset)[0])
 
 
 
@@ -159,8 +191,13 @@ class DeepBeliefNet():
             CD-1 training for hid--pen 
             """
             
+            #print("hidden_states_vis2hid", hidden_states_vis2hid.__class__)
+            #print("self.rbm_stack["+"vis--hid"+"].get_h_given_v(vis_trainset)", self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset).__class__)
+
+
+
             self.rbm_stack["hid--pen"].cd1(hidden_states_vis2hid, n_iterations)
-            hidden_states_hid2pen = copy.deepcopy(self.rbm_stack["hid--pen"].get_h_given_v(hidden_states_vis2hid))
+            hidden_states_hid2pen = copy.deepcopy(self.rbm_stack["hid--pen"].get_h_given_v(hidden_states_vis2hid)[0])
 
 
 
@@ -177,9 +214,10 @@ class DeepBeliefNet():
             #hidden_states_hid2pen: (n_samples, n_hidden)
             #lbl_trainset: (n_samples, n_label_units)
 
-            hidden_states_pen = np.concatenate((hidden_states_hid2pen, lbl_trainset),axis=1)
+            hidden_states_pen = np.concatenate((hidden_states_hid2pen, lbl_trainset), axis=1)
 
             #Train with Contrastive divergence
+            #print("hidden_states_pen", hidden_states_pen.__class__)
             self.rbm_stack["pen+lbl--top"].cd1(hidden_states_pen, n_iterations)
 
 
@@ -214,20 +252,20 @@ class DeepBeliefNet():
 
             for it in range(n_iterations):            
                                                 
-                # [TODO TASK 4.3] wake-phase : drive the network bottom to top using fixing the visible and label data.
+                # [DON'T DO TASK 4.3] wake-phase : drive the network bottom to top using fixing the visible and label data.
 
-                # [TODO TASK 4.3] alternating Gibbs sampling in the top RBM for k='n_gibbs_wakesleep' steps, also store neccessary information for learning this RBM.
+                # [DON'T DO TASK 4.3] alternating Gibbs sampling in the top RBM for k='n_gibbs_wakesleep' steps, also store neccessary information for learning this RBM.
 
-                # [TODO TASK 4.3] sleep phase : from the activities in the top RBM, drive the network top to bottom.
+                # [DON'T DO TASK 4.3] sleep phase : from the activities in the top RBM, drive the network top to bottom.
 
-                # [TODO TASK 4.3] compute predictions : compute generative predictions from wake-phase activations, and recognize predictions from sleep-phase activations.
+                # [DON'T DO TASK 4.3] compute predictions : compute generative predictions from wake-phase activations, and recognize predictions from sleep-phase activations.
                 # Note that these predictions will not alter the network activations, we use them only to learn the directed connections.
                 
-                # [TODO TASK 4.3] update generative parameters : here you will only use 'update_generate_params' method from rbm class.
+                # [DON'T DO TASK 4.3] update generative parameters : here you will only use 'update_generate_params' method from rbm class.
 
-                # [TODO TASK 4.3] update parameters of top rbm : here you will only use 'update_params' method from rbm class.
+                # [DON'T DO TASK 4.3] update parameters of top rbm : here you will only use 'update_params' method from rbm class.
 
-                # [TODO TASK 4.3] update generative parameters : here you will only use 'update_recognize_params' method from rbm class.
+                # [DON'T DO TASK 4.3] update generative parameters : here you will only use 'update_recognize_params' method from rbm class.
 
                 if it % self.print_period == 0 : print ("iteration=%7d"%it)
                         
