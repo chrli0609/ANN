@@ -1,3 +1,5 @@
+import copy
+
 from util import *
 from rbm import RestrictedBoltzmannMachine
 
@@ -143,12 +145,26 @@ class DeepBeliefNet():
             """ 
             CD-1 training for vis--hid 
             """            
+
+            self.rbm_stack["vis--hid"].cd1(visible_trainset=vis_trainset, n_iterations=n_iterations)
+
+            hidden_states_vis2hid = copy.deepcopy(self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset))
+
+
+
             self.savetofile_rbm(loc="trained_rbm",name="vis--hid")
 
             print ("training hid--pen")
             """ 
             CD-1 training for hid--pen 
-            """            
+            """
+            
+            self.rbm_stack["hid--pen"].cd1(hidden_states_vis2hid, n_iterations)
+            hidden_states_hid2pen = copy.deepcopy(self.rbm_stack["hid--pen"].get_h_given_v(hidden_states_vis2hid))
+
+
+
+
             self.rbm_stack["vis--hid"].untwine_weights()            
             self.savetofile_rbm(loc="trained_rbm",name="hid--pen")            
 
@@ -156,6 +172,17 @@ class DeepBeliefNet():
             """ 
             CD-1 training for pen+lbl--top 
             """
+
+            #Clamp labels with labels
+            #hidden_states_hid2pen: (n_samples, n_hidden)
+            #lbl_trainset: (n_samples, n_label_units)
+
+            hidden_states_pen = np.concatenate((hidden_states_hid2pen, lbl_trainset),axis=1)
+
+            #Train with Contrastive divergence
+            self.rbm_stack["pen+lbl--top"].cd1(hidden_states_pen, n_iterations)
+
+
             self.rbm_stack["hid--pen"].untwine_weights()
             self.savetofile_rbm(loc="trained_rbm",name="pen+lbl--top")            
 

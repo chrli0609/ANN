@@ -64,6 +64,7 @@ class RestrictedBoltzmannMachine():
         
         self.rf = { # receptive-fields. Only applicable when visible layer is input data
             "period" : 5000, # iteration period to visualize
+            #"period" : 60, # iteration period to visualize
             "grid" : [5,5], # size of the grid
             "ids" : np.random.randint(0,self.ndim_hidden,25) # pick some random hidden units
             }
@@ -71,7 +72,7 @@ class RestrictedBoltzmannMachine():
         return
 
         
-    def cd1(self,visible_trainset, n_iterations=10000):
+    def cd1(self, visible_trainset, n_iterations=10000):
         
         """Contrastive Divergence with k=1 full alternating Gibbs sampling
 
@@ -83,6 +84,8 @@ class RestrictedBoltzmannMachine():
         print ("learning CD1")
 
         #visible_trainset = visible_trainset[0:100,:]
+        
+        print("visible_trainset", visible_trainset.__class__)
         
         n_samples = visible_trainset.shape[0]
 
@@ -96,21 +99,25 @@ class RestrictedBoltzmannMachine():
         #h_states_1 = [None] * n_samples
 
         for it in range(n_iterations):
-
+            
+            #print("visible_trainset", visible_trainset.shape)
             v_batch_probability_on = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
 
 
-            v_batch_states_0 = np.zeros((self.batch_size, self.ndim_visible))
 
-            for i in range(self.batch_size):
-                for j in range(self.ndim_visible):
 
-                    r = random.random()
-                    if r < v_batch_probability_on[i][j]:
-                        v_batch_states_0[i][j] = 1
-                    else:
-                        v_batch_states_0[i][j] = 0
- 
+
+            # Generate random values in a matrix of the same shape as v_batch_probability_on
+            random_values = np.random.rand(self.batch_size, self.ndim_visible)
+
+
+            #print("random_values", random_values.shape)
+            #print("v_batch_probability_on", v_batch_probability_on.shape)
+            
+
+            # Compare the random values with the probability matrix and assign states
+            v_batch_states_0 = (random_values < v_batch_probability_on).astype(int)
+            #print("v_batch_states_0", v_batch_states_0.shape)
 
 
             
@@ -178,12 +185,25 @@ class RestrictedBoltzmannMachine():
         # [TODO TASK 4.1] get the gradients from the arguments (replace the 0s below) and update the weight and bias parameters
 
 
-
         #print("Updating params")
         #print("v_0\n", v_0.tolist(), "\n", np.sum(v_0))
         #print("h_0\n", h_0, "\n", np.sum(h_0))
         #print("v_k\n", v_k, "\n", np.sum(v_k))
         #print("h_k\n", h_k, "\n", np.sum(h_k))
+
+        """
+        # Compute the average difference in biases across all samples (vectorized)
+        delta_bias_v = np.mean(v_0 - v_k, axis=0)  # Visible bias update
+        delta_bias_h = np.mean(h_0 - h_k, axis=0)  # Hidden bias update
+
+        # Compute the positive and negative gradients for the entire batch using matrix multiplication
+        # This effectively replaces the outer products for each sample
+        positive_grad = np.dot(v_0.T, h_0)  # Data-dependent term
+        negative_grad = np.dot(v_k.T, h_k)  # Model-dependent term
+
+        # Compute the delta for weights, averaging the difference across all samples
+        delta_weight = (positive_grad - negative_grad) / self.batch_size
+        """
 
         delta_bias_v = np.zeros(self.ndim_visible)
         delta_bias_h = np.zeros(self.ndim_hidden)
@@ -204,9 +224,8 @@ class RestrictedBoltzmannMachine():
 
 
             delta_weight += (positive_grad - negative_grad) / n_samples
-
-
-        print("norm(delta_weights)", np.linalg.norm(delta_weight))
+        
+        #print("norm(delta_weights)", np.linalg.norm(delta_weight))
 
         
 
@@ -244,49 +263,25 @@ class RestrictedBoltzmannMachine():
 
         # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of hidden layer (replace the zeros below) 
 
-        
+        # Matrix-based implementation for all samples
+        # Compute the weighted sum for all hidden neurons for all samples using matrix multiplication
+        # Each row corresponds to one sample, each column to one hidden neuron
+        weighted_sum_all_samples = np.dot(visible_minibatch, self.weight_vh) + self.bias_h
 
 
-        probability_of_activation_all_neurons_of_all_samples = []
-        activation_of_all_neurons_of_all_samples = []
-        for k in range(n_samples):
-            
+        # Compute the probability of activation for all hidden neurons across all samples (vectorized)
+        probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        #print("probability_on_all_hidden_neurons_all_samples", probability_on_all_hidden_neurons_all_samples)
 
-            probability_on_all_hidden_neurons = [None] * self.ndim_hidden
-            activation_all_hidden_neurons = [None] * self.ndim_hidden
-            for j in range(self.ndim_hidden):
-                
+        # Generate random values for each hidden neuron of every sample for activation decision
+        random_values = np.random.rand(n_samples, self.ndim_hidden)
 
-                #Compute contributions from all neighboring nodes
-                weighted_sum = 0
-                for i in range(self.ndim_visible):
-                    weighted_sum += visible_minibatch[k][i] * self.weight_vh[i][j]
-                
-                #Compute probability of hidden neurons j is +1
-                probability_on_all_hidden_neurons[j] = 1 / (1 + np.exp(-self.bias_h[j] - weighted_sum))
+        # Determine activation based on probability and random values (vectorized)
+        activation_all_hidden_neurons_all_samples = (random_values < probability_on_all_hidden_neurons_all_samples).astype(int)
 
-
-                #Throw dice to decide if state should be +1 or -1
-                r = random.random()
-                
-                #print("probability_on_all_hidden_neurons[j]", np.array(probability_on_all_hidden_neurons[j]).shape)
-                if r < probability_on_all_hidden_neurons[j]:
-                    activation_all_hidden_neurons[j] = 1
-                else:
-                    activation_all_hidden_neurons[j] = 0
-            
-            
-
-            #Append the probability of hidden neurons = 1
-            probability_of_activation_all_neurons_of_all_samples.append(probability_on_all_hidden_neurons)
-            activation_of_all_neurons_of_all_samples.append(activation_all_hidden_neurons)
-                
-        
-
-        return np.array(probability_of_activation_all_neurons_of_all_samples), np.array(activation_of_all_neurons_of_all_samples)
-        #return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
-
-
+        # Since we already have matrix-based results, no need for appending
+        # Directly return the probability and activation matrices
+        return probability_on_all_hidden_neurons_all_samples, activation_all_hidden_neurons_all_samples
 
 
     def get_v_given_h(self,hidden_minibatch):
@@ -314,57 +309,83 @@ class RestrictedBoltzmannMachine():
             Then, for both parts, use the appropriate activation function to get probabilities and a sampling method \
             to get activities. The probabilities as well as activities can then be concatenated back into a normal visible layer.
             """
+            
 
             # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass below). \
             # Note that this section can also be postponed until TASK 4.2, since in this task, stand-alone RBMs do not contain labels in visible layer.
             
-            pass
+            #1. Compute updated weighted sums from lvl 1 neighbors
+
+            #2. Separate pen and label units 
+
+            #3. Apply probability + sign to pen units
+
+            #4. Apply softmax to label units
+
+
+            # Compute weighted sums for all samples and all visible neurons at once using matrix multiplication
+            # Each row of the result corresponds to a sample
+            weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_vh.T) + self.bias_v
+
+            # Compute the probability of activation for all visible neurons for all samples (vectorized)
+            probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+
+
+            #Split pen and label units
+            pen_units_probabilities = probability_on_all_visible_neurons_all_samples[:-self.n_labels,:]
+            label_units_probabilities = probability_on_all_visible_neurons_all_samples[-self.n_labels:,:]
+
+
+            ######################################
+            ###### Handle Penultimate Units ######
+            ######################################
+            #probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-pen_units))
+
+            # Generate random values for each visible neuron of every sample for activation decision
+            random_values = np.random.rand(n_samples, self.ndim_visible-self.n_labels)
+
+            # Determine activation based on probability and random values (vectorized)
+            activation_all_pen_units = (random_values < pen_units_probabilities).astype(int)
+
+
+            ################################
+            ###### Handle Label Units ######
+            ################################
+            activation_all_label_units = softmax(label_units_probabilities)
+
+
+
+            #####################################################
+            ###### Concatenate Penultimate and Label units ######
+            #####################################################
+            activation_all_visible_neurons_all_samples = np.concatenate((activation_all_pen_units, activation_all_label_units), axis=0)
+
+
+
+            # Return the probabilities and activations for all samples
+            return probability_on_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples
+            
+
             
         else:
                         
             # [TODO TASK 4.1] compute probabilities and activations (samples from probabilities) of visible layer (replace the pass and zeros below)             
 
-            probability_of_activation_all_neurons_of_all_samples = []
-            activation_of_all_neurons_of_all_samples = []
-            for k in range(n_samples):
-                
+            # Compute weighted sums for all samples and all visible neurons at once using matrix multiplication
+            # Each row of the result corresponds to a sample
+            weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_vh.T) + self.bias_v
 
-                probability_on_all_visible_neurons = [None] * self.ndim_visible
-                activation_all_visible_neurons = [None] * self.ndim_visible
-                for i in range(self.ndim_visible):
-                    
+            # Compute the probability of activation for all visible neurons for all samples (vectorized)
+            probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
 
-                    #print("self.weight_vh", self.weight_vh)
-                    #print("hidden_minibatch", hidden_minibatch)
-                    
-                    #Compute contributions from all neighboring nodes
-                    weighted_sum = 0
-                    for j in range(self.ndim_hidden):
-                        weighted_sum += self.weight_vh[i][j] * hidden_minibatch[k][j]
-                    
-                    #Compute probability of hidden neurons j is +1
-                    probability_on_all_visible_neurons[i] = 1 / (1 + np.exp(-self.bias_v[i] - weighted_sum))
+            # Generate random values for each visible neuron of every sample for activation decision
+            random_values = np.random.rand(n_samples, self.ndim_visible)
 
+            # Determine activation based on probability and random values (vectorized)
+            activation_all_visible_neurons_all_samples = (random_values < probability_on_all_visible_neurons_all_samples).astype(int)
 
-                    #Throw dice to decide if state should be +1 or -1
-                    r = random.random()
-
-                    if r < probability_on_all_visible_neurons[i]:
-                        activation_all_visible_neurons[i] = 1
-                    else:
-                        activation_all_visible_neurons[i] = 0
-                
-                
-
-                #Append the probability of hidden neurons = 1
-                probability_of_activation_all_neurons_of_all_samples.append(probability_on_all_visible_neurons)
-                activation_of_all_neurons_of_all_samples.append(activation_all_visible_neurons)
-                
-        
-
-        return np.array(probability_of_activation_all_neurons_of_all_samples), np.array(activation_of_all_neurons_of_all_samples)
-        
-        #return np.zeros((n_samples,self.ndim_visible)), np.zeros((n_samples,self.ndim_visible))
+            # Return the probabilities and activations for all samples
+            return probability_on_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples
 
 
     
@@ -396,8 +417,34 @@ class RestrictedBoltzmannMachine():
         n_samples = visible_minibatch.shape[0]
 
         # [TODO TASK 4.2] perform same computation as the function 'get_h_given_v' but with directed connections (replace the zeros below) 
+
+
+
+        # Matrix-based implementation for all samples
+        # Compute the weighted sum for all hidden neurons for all samples using matrix multiplication
+        # Each row corresponds to one sample, each column to one hidden neuron
+        weighted_sum_all_samples = np.dot(visible_minibatch, self.weight_v_to_h) + self.bias_h
+
+        # Compute the probability of activation for all hidden neurons across all samples (vectorized)
+        probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        #print("probability_on_all_hidden_neurons_all_samples", probability_on_all_hidden_neurons_all_samples)
+
+        # Generate random values for each hidden neuron of every sample for activation decision
+        random_values = np.random.rand(n_samples, self.ndim_hidden)
+
+        # Determine activation based on probability and random values (vectorized)
+        activation_all_hidden_neurons_all_samples = (random_values < probability_on_all_hidden_neurons_all_samples).astype(int)
+
+        # Since we already have matrix-based results, no need for appending
+        # Directly return the probability and activation matrices
+        return probability_on_all_hidden_neurons_all_samples, activation_all_hidden_neurons_all_samples
+
+
+
+
+
         
-        return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
+        #return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
 
 
     def get_v_given_h_dir(self,hidden_minibatch):
@@ -430,16 +477,38 @@ class RestrictedBoltzmannMachine():
             # [TODO TASK 4.2] Note that even though this function performs same computation as 'get_v_given_h' but with directed connections,
             # this case should never be executed : when the RBM is a part of a DBN and is at the top, it will have not have directed connections.
             # Appropriate code here is to raise an error (replace pass below)
+
             
-            pass
+            #pass
+
+            raise Exception("self.is_top when calling get_v_given_h_dir, SHOULD NEVER HAPPEN!!!")
+
             
         else:
                         
             # [TODO TASK 4.2] performs same computaton as the function 'get_v_given_h' but with directed connections (replace the pass and zeros below)             
 
-            pass
+            # Compute weighted sums for all samples and all visible neurons at once using matrix multiplication
+            # Each row of the result corresponds to a sample
+            #weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_vh.T) + self.bias_v
+            weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_h_to_v) + self.bias_v
+
+            # Compute the probability of activation for all visible neurons for all samples (vectorized)
+            probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+
+            # Generate random values for each visible neuron of every sample for activation decision
+            random_values = np.random.rand(n_samples, self.ndim_visible)
+
+            # Determine activation based on probability and random values (vectorized)
+            activation_all_visible_neurons_all_samples = (random_values < probability_on_all_visible_neurons_all_samples).astype(int)
+
+            # Return the probabilities and activations for all samples
+            return probability_on_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples
+
+
+            #pass
             
-        return np.zeros((n_samples,self.ndim_visible)), np.zeros((n_samples,self.ndim_visible))        
+        #return np.zeros((n_samples,self.ndim_visible)), np.zeros((n_samples,self.ndim_visible))        
     
     
         
