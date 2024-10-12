@@ -82,7 +82,7 @@ class DeepBeliefNet():
         
         #3. Set Hidden probabilities of rbm[vis--hid] to visible nodes of rbm[hid--pen]
         #4. Get Hidden Probabilities of rbm[hid--pen]
-        pen_prob, pen_states = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=prob_hidden)
+        pen_prob, pen_states = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=hidden_prob)
         
         
         #5. Set hidden probabilities of rbm[hid--pen] to visible nodes of rbm[pen+lbl--top]
@@ -98,9 +98,9 @@ class DeepBeliefNet():
 
             _ , top_hidden_0_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=top_visible_states)
 
-            prob_top_visible_1, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_0_states)
+            top_visible_1_prob, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_0_states)
 
-            _ , top_hidden_1_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=prob_top_visible_1)
+            _ , top_hidden_1_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=top_visible_1_prob)
 
 
             top_visible_states, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_1_states)
@@ -136,10 +136,27 @@ class DeepBeliefNet():
 
         # [TODO TASK 4.2] fix the label in the label layer and run alternating Gibbs sampling in the top RBM. From the top RBM, drive the network \ 
         # top to the bottom visible layer (replace 'vis' from random to your generated visible layer).
-            
-        for _ in range(self.n_gibbs_gener):
+        
+        
+        #1. Initialize pen units with random states
+        pen_units_states = np.random.choice([0, 1], size=(n_sample, self.rbm_stack["pen+lbl--top"].ndim_visible-self.rbm_stack["pen+lbl--top"].n_labels))
+        #vis = np.random.rand(n_sample,self.sizes["vis"])
 
-            vis = np.random.rand(n_sample,self.sizes["vis"])
+        vis = np.concatenate((pen_units_states, lbl), axis=1)
+
+
+        #2. Perform gibb sampling
+        
+        for _ in range(self.n_gibbs_gener):
+            
+            _, hidden_0_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(vis)
+
+            _, visible_0_states = self.rbm_stack["pen+lbl--top"].get_v_given_h(hidden_0_states)
+
+            _, hidden_1_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(visible_0_states)
+
+            vis = hidden_1_states
+            
             
             records.append( [ ax.imshow(vis.reshape(self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True, interpolation=None) ] )
             
