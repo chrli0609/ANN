@@ -142,20 +142,32 @@ class DeepBeliefNet():
         pen_units_states = np.random.choice([0, 1], size=(n_sample, self.rbm_stack["pen+lbl--top"].ndim_visible-self.rbm_stack["pen+lbl--top"].n_labels))
         #vis = np.random.rand(n_sample,self.sizes["vis"])
 
-        vis = np.concatenate((pen_units_states, lbl), axis=1)
+        top_visible_states = np.concatenate((pen_units_states, lbl), axis=1)
 
 
         #2. Perform gibb sampling
         
         for _ in range(self.n_gibbs_gener):
+
+            #============================== GIBBS SAMPLING STARTS HERE =========================
             
-            _, hidden_0_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(vis)
+            _, hidden_0_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(top_visible_states)
 
             _, visible_0_states = self.rbm_stack["pen+lbl--top"].get_v_given_h(hidden_0_states)
 
             _, hidden_1_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(visible_0_states)
 
-            vis = hidden_1_states
+            top_visible_states= hidden_1_states
+
+            #============================== GIBBS SAMPLING ENDS HERE =========================
+
+            _, hidden_states = self.rbm_stack["hid--pen"].get_v_given_h_dir(hidden_1_states)
+
+            visible_prob, _ = self.rbm_stack["vis--hid"].get_v_given_h_dir(hidden_states)
+
+
+
+            vis = visible_prob
             
             
             records.append( [ ax.imshow(vis.reshape(self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True, interpolation=None) ] )

@@ -2,7 +2,7 @@ from util import *
 from rbm import RestrictedBoltzmannMachine 
 from dbn import DeepBeliefNet
 
-
+import numpy as np
 
 
 N_TRAIN = 60000

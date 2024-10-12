@@ -11,7 +11,7 @@ def sigmoid(support):
     Returns:
       on_probabilities: shape is (size of mini-batch, size of layer)      
     """
-    
+    #print("support", support)
     on_probabilities = 1./(1.+np.exp(-support))
     return on_probabilities
 
@@ -39,7 +39,7 @@ def sample_binary(on_probabilities):
     Returns:
       activations: shape is (size of mini-batch, size of layer)      
     """
-
+    #activations = 1. * ( on_probabilities >= 0.5 )
     activations = 1. * ( on_probabilities >= np.random.random_sample(size=on_probabilities.shape) )
     return activations
 

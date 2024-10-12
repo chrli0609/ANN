@@ -103,15 +103,25 @@ class RestrictedBoltzmannMachine():
             #print("visible_trainset", visible_trainset.shape)
             v_batch_prob_0 = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
 
+            #print("v_batch_prob_0\t\t", v_batch_prob_0)
+
             v_batch_states_0 = sample_binary(v_batch_prob_0)
+
+            #print("v_batch_states_0\t\t", v_batch_states_0)
 
             
             
             #Awake
+
+            #print("v_batch_states_0\n", v_batch_states_0)
+            #print(np.linalg.norm(v_batch_states_0))
             
             h_batch_prob_0, h_batch_states_0 = self.get_h_given_v(v_batch_states_0)
             #for i in range(self.batch_size):
             #    h_states_0[i] = h_batch_states_0
+
+            #print("h_batch_prob_0\t\t", h_batch_prob_0)
+            #print("h_batch_states_0\t\t", h_batch_states_0)
             
 
             #Asleep
@@ -119,6 +129,8 @@ class RestrictedBoltzmannMachine():
             #for i in range(self.batch_size):
             #    v_states_1[i] = v_batch_states
 
+            #print("v_batch_prob_1\t\t", v_batch_prob_1)
+            #print("v_batch_states_1\t\t", v_batch_states_1)
 
 
             #Awake 2
@@ -126,10 +138,18 @@ class RestrictedBoltzmannMachine():
             #for i in range(self.batch_size):
             #    h_states_1[i] = h_batch_states_1
 
-
+            #rint("h_batch_prob_1\t\t", h_batch_prob_1)
+            #rint("h_batch_states_1\t\t", h_batch_states_1)
             
             #self.update_params(v_states_0, h_states_0, v_states_1, h_states_1)
-            self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1, n_samples)
+            tmp = np.concatenate((v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1), axis=1)
+            #print("v_batch_prob_0", np.sum(v_batch_prob_0))
+            #print("h_batch_states_0", np.sum(h_batch_states_0))
+            #print("v_batch_prob_1", np.sum(v_batch_prob_1))
+            #print("h_batch_prob_1", np.sum(h_batch_prob_1))
+            #print("sum of state values", np.sum(tmp))
+            #self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1, n_samples)
+            self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_states_1, n_samples)
 
 
 
@@ -149,7 +169,7 @@ class RestrictedBoltzmannMachine():
             
             if it % self.print_period == 0 :
 
-                print ("iteration=%7d recon_loss=%4.4f"%(it, np.linalg.norm(visible_trainset - visible_trainset)))
+                print ("iteration=%7d recon_loss=%4.4f"%(it, np.linalg.norm(v_batch_prob_0 - v_batch_states_1)))
         
         return
     
@@ -198,7 +218,7 @@ class RestrictedBoltzmannMachine():
 
         # Update rule for the weights based on Contrastive Divergence
         # Calculate the outer product for each sample and average over all samples
-        for n in range(self.batch_size):
+        '''for n in range(self.batch_size):
 
             #Bias
             delta_bias_v += (v_0[n] - v_k[n]) 
@@ -210,22 +230,54 @@ class RestrictedBoltzmannMachine():
 
 
             delta_weight += (positive_grad - negative_grad)
+        '''
+
+
+        delta_bias_v = np.sum(v_0 - v_k, axis=0) # Sum over the batch
+        delta_bias_h = np.sum(h_0 - h_k, axis=0)
         
-        #print("norm(delta_weights)", np.linalg.norm(delta_weight))
+        
+        # Compute positive phase: outer product of v_0 and h_0
+        positive_grad = np.dot(v_0.T, h_0)
+
+        # Compute negative phase: outer product of v_k and h_k
+        negative_grad = np.dot(v_k.T, h_k)
+
+        # Update weights using the formula
+        delta_weight = (positive_grad - negative_grad)
+
+        #print("delta_weight", delta_weight.shape)
+
+
+        #for n in range(n_samples):
+        #    if positive_grad[n] < negative_grad[n]:
+        #        print("True")
+        #    else:
+        #        print("False")
 
         
 
         
-        self.delta_bias_v += delta_bias_v / n_samples
-        self.delta_weight_vh += delta_weight / n_samples
-        self.delta_bias_h += delta_bias_h  / n_samples
+        self.delta_bias_v = delta_bias_v / n_samples
+        self.delta_weight_vh = delta_weight / n_samples
+        self.delta_bias_h = delta_bias_h  / n_samples
+
         
         self.bias_v += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
         self.bias_h += self.delta_bias_h
 
+
+        #print("norm(delta_weights)", np.linalg.norm(self.delta_weight_vh))
+
         #================================L2 NORM BETWEEN DELTA W AND ORIGIN EACH SAMPLE =================================
         self.debug_weights.append(np.linalg.norm(delta_weight))
+        #self.debug_weights.append(np.sum(self.delta_weight_vh))
+        #self.debug_weights.append(np.sum(self.weight_vh))
+        #print("self.weights sum", np.sum(self.weight_vh))
+        #print("bias_v", self.bias_v)
+        #print("bias_h", self.bias_h)
+
         
         return
 
@@ -254,10 +306,12 @@ class RestrictedBoltzmannMachine():
         # Compute the weighted sum for all hidden neurons for all samples using matrix multiplication
         # Each row corresponds to one sample, each column to one hidden neuron
         weighted_sum_all_samples = np.dot(visible_minibatch, self.weight_vh) + self.bias_h
+        #print("weighted_sum_all_samples \t\t", weighted_sum_all_samples)
 
 
         # Compute the probability of activation for all hidden neurons across all samples (vectorized)
         #probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        #print("in get h_given_v")
         probability_on_all_hidden_neurons_all_samples = sigmoid(weighted_sum_all_samples)
         #print("probability_on_all_hidden_neurons_all_samples", probability_on_all_hidden_neurons_all_samples)
 
@@ -358,6 +412,7 @@ class RestrictedBoltzmannMachine():
             #activation_all_label_units[np.arange(probability_all_label_units_all_samples.shape[0]), max_indices] = 1
 
             activation_all_label_units = sample_categorical(probability_all_label_units_all_samples)
+            #print("activation_all_label_units", activation_all_label_units)
 
 
 
@@ -384,6 +439,7 @@ class RestrictedBoltzmannMachine():
 
             # Compute the probability of activation for all visible neurons for all samples (vectorized)
             #probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+            #print("in get v_given_h")
             probability_on_all_visible_neurons_all_samples = sigmoid(weighted_sum_all_samples)
 
             # Generate random values for each visible neuron of every sample for activation decision
