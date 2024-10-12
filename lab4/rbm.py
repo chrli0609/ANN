@@ -101,50 +101,35 @@ class RestrictedBoltzmannMachine():
         for it in range(n_iterations):
             
             #print("visible_trainset", visible_trainset.shape)
-            v_batch_probability_on = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
+            v_batch_prob_0 = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
 
-
-
-
-
-            # Generate random values in a matrix of the same shape as v_batch_probability_on
-            random_values = np.random.rand(self.batch_size, self.ndim_visible)
-
-
-            #print("random_values", random_values.shape)
-            #print("v_batch_probability_on", v_batch_probability_on.shape)
-            
-
-            # Compare the random values with the probability matrix and assign states
-            v_batch_states_0 = (random_values < v_batch_probability_on).astype(int)
-            #print("v_batch_states_0", v_batch_states_0.shape)
-
+            v_batch_states_0 = sample_binary(v_batch_prob_0)
 
             
             
             #Awake
             
-            _, h_batch_states_0 = self.get_h_given_v(v_batch_states_0)
+            h_batch_prob_0, h_batch_states_0 = self.get_h_given_v(v_batch_states_0)
             #for i in range(self.batch_size):
             #    h_states_0[i] = h_batch_states_0
             
 
             #Asleep
-            _, v_batch_states_1 = self.get_v_given_h(h_batch_states_0)
+            v_batch_prob_1, v_batch_states_1 = self.get_v_given_h(h_batch_states_0)
             #for i in range(self.batch_size):
             #    v_states_1[i] = v_batch_states
 
 
 
             #Awake 2
-            _, h_batch_states_1 = self.get_h_given_v(v_batch_states_1)
+            h_batch_prob_1, h_batch_states_1 = self.get_h_given_v(v_batch_states_1)
             #for i in range(self.batch_size):
             #    h_states_1[i] = h_batch_states_1
 
 
             
             #self.update_params(v_states_0, h_states_0, v_states_1, h_states_1)
-            self.update_params(v_batch_states_0, h_batch_states_0, v_batch_states_1, h_batch_states_1, n_samples)
+            self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1, n_samples)
 
 
 
@@ -216,24 +201,24 @@ class RestrictedBoltzmannMachine():
         for n in range(self.batch_size):
 
             #Bias
-            delta_bias_v += (v_0[n] - v_k[n]) / n_samples
-            delta_bias_h += (h_0[n] - h_k[n]) / n_samples
+            delta_bias_v += (v_0[n] - v_k[n]) 
+            delta_bias_h += (h_0[n] - h_k[n])
                 
 
             positive_grad = np.outer(v_0[n], h_0[n])  # Data-dependent term
             negative_grad = np.outer(v_k[n], h_k[n])  # Model-dependent term
 
 
-            delta_weight += (positive_grad - negative_grad) / n_samples
+            delta_weight += (positive_grad - negative_grad)
         
         #print("norm(delta_weights)", np.linalg.norm(delta_weight))
 
         
 
         
-        self.delta_bias_v += delta_bias_v
-        self.delta_weight_vh += delta_weight
-        self.delta_bias_h += delta_bias_h
+        self.delta_bias_v += delta_bias_v / n_samples
+        self.delta_weight_vh += delta_weight / n_samples
+        self.delta_bias_h += delta_bias_h  / n_samples
         
         self.bias_v += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
@@ -244,6 +229,7 @@ class RestrictedBoltzmannMachine():
         
         return
 
+    #Takes input as binary states and produces probabilities and binary states
     def get_h_given_v(self,visible_minibatch):
         
         """Compute probabilities p(h|v) and activations h ~ p(h|v) 
@@ -271,20 +257,23 @@ class RestrictedBoltzmannMachine():
 
 
         # Compute the probability of activation for all hidden neurons across all samples (vectorized)
-        probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        #probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        probability_on_all_hidden_neurons_all_samples = sigmoid(weighted_sum_all_samples)
         #print("probability_on_all_hidden_neurons_all_samples", probability_on_all_hidden_neurons_all_samples)
 
         # Generate random values for each hidden neuron of every sample for activation decision
-        random_values = np.random.rand(n_samples, self.ndim_hidden)
+        #random_values = np.random.rand(n_samples, self.ndim_hidden)
 
         # Determine activation based on probability and random values (vectorized)
-        activation_all_hidden_neurons_all_samples = (random_values < probability_on_all_hidden_neurons_all_samples).astype(int)
+        #activation_all_hidden_neurons_all_samples = (random_values < probability_on_all_hidden_neurons_all_samples).astype(int)
+
+        activation_all_hidden_neurons_all_samples = sample_binary(probability_on_all_hidden_neurons_all_samples)
 
         # Since we already have matrix-based results, no need for appending
         # Directly return the probability and activation matrices
         return probability_on_all_hidden_neurons_all_samples, activation_all_hidden_neurons_all_samples
 
-
+    #Takes input as binary states and produces probabilities and binary states
     def get_v_given_h(self,hidden_minibatch):
         
         """Compute probabilities p(v|h) and activations v ~ p(v|h)
@@ -342,14 +331,15 @@ class RestrictedBoltzmannMachine():
             ######################################
             # Compute the probability of activation for all visible neurons for all samples (vectorized)
 
-            probability_on_all_pen_neurons_all_samples = 1 / (1 + np.exp(-pen_units_weighted_sum))
+            #probability_on_all_pen_neurons_all_samples = 1 / (1 + np.exp(-pen_units_weighted_sum))
+            probability_on_all_pen_neurons_all_samples = sigmoid(pen_units_weighted_sum)
 
             # Generate random values for each visible neuron of every sample for activation decision
-            random_values = np.random.rand(n_samples, self.ndim_visible-self.n_labels)
-
-
+            #random_values = np.random.rand(n_samples, self.ndim_visible-self.n_labels)
             # Determine activation based on probability and random values (vectorized)
-            activation_all_pen_units = (random_values < probability_on_all_pen_neurons_all_samples).astype(int)
+            #activation_all_pen_units = (random_values < probability_on_all_pen_neurons_all_samples).astype(int)
+
+            activation_all_pen_units = sample_binary(probability_on_all_pen_neurons_all_samples)
 
 
             ################################
@@ -359,13 +349,15 @@ class RestrictedBoltzmannMachine():
             probability_all_label_units_all_samples = softmax(label_units_weighted_sum)
                         
             # Step 1: Find the index of the maximum value along the second axis (axis=1)
-            max_indices = np.argmax(probability_all_label_units_all_samples, axis=1)
+            #max_indices = np.argmax(probability_all_label_units_all_samples, axis=1)
 
             # Step 2: Create a one-hot encoded matrix with the same shape as the original probabilities
-            activation_all_label_units = np.zeros_like(probability_all_label_units_all_samples)
+            #activation_all_label_units = np.zeros_like(probability_all_label_units_all_samples)
 
             # Step 3: Set the max index to 1 for each sample
-            activation_all_label_units[np.arange(probability_all_label_units_all_samples.shape[0]), max_indices] = 1
+            #activation_all_label_units[np.arange(probability_all_label_units_all_samples.shape[0]), max_indices] = 1
+
+            activation_all_label_units = sample_categorical(probability_all_label_units_all_samples)
 
 
 
@@ -391,13 +383,15 @@ class RestrictedBoltzmannMachine():
             weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_vh.T) + self.bias_v
 
             # Compute the probability of activation for all visible neurons for all samples (vectorized)
-            probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+            #probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+            probability_on_all_visible_neurons_all_samples = sigmoid(weighted_sum_all_samples)
 
             # Generate random values for each visible neuron of every sample for activation decision
-            random_values = np.random.rand(n_samples, self.ndim_visible)
+            #random_values = np.random.rand(n_samples, self.ndim_visible)
 
             # Determine activation based on probability and random values (vectorized)
-            activation_all_visible_neurons_all_samples = (random_values < probability_on_all_visible_neurons_all_samples).astype(int)
+            #activation_all_visible_neurons_all_samples = (random_values < probability_on_all_visible_neurons_all_samples).astype(int)
+            activation_all_visible_neurons_all_samples = sample_categorical(probability_on_all_visible_neurons_all_samples)
 
             # Return the probabilities and activations for all samples
             return probability_on_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples
@@ -441,14 +435,16 @@ class RestrictedBoltzmannMachine():
         weighted_sum_all_samples = np.dot(visible_minibatch, self.weight_v_to_h) + self.bias_h
 
         # Compute the probability of activation for all hidden neurons across all samples (vectorized)
-        probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        #probability_on_all_hidden_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+        probability_on_all_hidden_neurons_all_samples = sigmoid(weighted_sum_all_samples)
         #print("probability_on_all_hidden_neurons_all_samples", probability_on_all_hidden_neurons_all_samples)
 
         # Generate random values for each hidden neuron of every sample for activation decision
-        random_values = np.random.rand(n_samples, self.ndim_hidden)
+        #random_values = np.random.rand(n_samples, self.ndim_hidden)
 
         # Determine activation based on probability and random values (vectorized)
-        activation_all_hidden_neurons_all_samples = (random_values < probability_on_all_hidden_neurons_all_samples).astype(int)
+        #activation_all_hidden_neurons_all_samples = (random_values < probability_on_all_hidden_neurons_all_samples).astype(int)
+        activation_all_hidden_neurons_all_samples = sample_binary(probability_on_all_hidden_neurons_all_samples)
 
         # Since we already have matrix-based results, no need for appending
         # Directly return the probability and activation matrices
@@ -509,13 +505,18 @@ class RestrictedBoltzmannMachine():
             weighted_sum_all_samples = np.dot(hidden_minibatch, self.weight_h_to_v) + self.bias_v
 
             # Compute the probability of activation for all visible neurons for all samples (vectorized)
-            probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+            #probability_on_all_visible_neurons_all_samples = 1 / (1 + np.exp(-weighted_sum_all_samples))
+            probability_on_all_visible_neurons_all_samples = sigmoid(weighted_sum_all_samples)
 
             # Generate random values for each visible neuron of every sample for activation decision
-            random_values = np.random.rand(n_samples, self.ndim_visible)
+            #random_values = np.random.rand(n_samples, self.ndim_visible)
 
             # Determine activation based on probability and random values (vectorized)
-            activation_all_visible_neurons_all_samples = (random_values < probability_on_all_visible_neurons_all_samples).astype(int)
+            #activation_all_visible_neurons_all_samples = (random_values < probability_on_all_visible_neurons_all_samples).astype(int)
+
+            activation_all_visible_neurons_all_samples = sample_binary(probability_on_all_visible_neurons_all_samples)
+
+
 
             # Return the probabilities and activations for all samples
             return probability_on_all_visible_neurons_all_samples, activation_all_visible_neurons_all_samples

@@ -78,15 +78,15 @@ class DeepBeliefNet():
 
         #1. Input true_img to visible layaer of rbm[vis--hid]
         #2. Get Hidden probabilities of rbm[vis--hid]
-        prob_hidden, _ = self.rbm_stack["vis--hid"].get_h_given_v_dir(visible_minibatch=true_img)
+        hidden_prob, _ = self.rbm_stack["vis--hid"].get_h_given_v_dir(visible_minibatch=true_img)
         
         #3. Set Hidden probabilities of rbm[vis--hid] to visible nodes of rbm[hid--pen]
         #4. Get Hidden Probabilities of rbm[hid--pen]
-        prob_pen, _ = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=prob_hidden)
+        pen_prob, pen_states = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=prob_hidden)
         
         
         #5. Set hidden probabilities of rbm[hid--pen] to visible nodes of rbm[pen+lbl--top]
-        prob_pen_lbl = np.concatenate((prob_pen, lbl), axis=1)
+        top_visible_states = np.concatenate((pen_states, lbl), axis=1)
         
         
 
@@ -96,20 +96,20 @@ class DeepBeliefNet():
             #get_v_given_h
             #get_h_given_v     --> next iter
 
-            prob_top_hidden_0, _ = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=prob_pen_lbl)
+            _ , top_hidden_0_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=top_visible_states)
 
-            prob_top_visible_1, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=prob_top_hidden_0)
+            prob_top_visible_1, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_0_states)
 
-            prob_top_hidden_1, _ = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=prob_top_visible_1)
-
-
-            prob_pen_lbl, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=prob_top_hidden_1)
+            _ , top_hidden_1_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=prob_top_visible_1)
 
 
+            top_visible_states, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_1_states)
 
 
 
-        predicted_lbl = sample_categorical(softmax(prob_pen_lbl[:,-self.rbm_stack["pen+lbl--top"].n_labels:]))
+
+
+        predicted_lbl = sample_categorical(softmax(top_visible_states[:,-self.rbm_stack["pen+lbl--top"].n_labels:]))
         #predicted_lbl = np.zeros(true_lbl.shape)
             
         print ("accuracy = %.2f%%"%(100.*np.mean(np.argmax(predicted_lbl,axis=1)==np.argmax(true_lbl,axis=1))))
@@ -177,10 +177,11 @@ class DeepBeliefNet():
             print ("training vis--hid")
             """ 
             CD-1 training for vis--hid 
-            """            
+            """
+            
             self.rbm_stack["vis--hid"].cd1(visible_trainset=vis_trainset, n_iterations=n_iterations)
 
-            hidden_states_vis2hid = copy.deepcopy(self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset)[0])
+            hidden_prob = copy.deepcopy(self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset)[0])
 
 
 
@@ -196,8 +197,8 @@ class DeepBeliefNet():
 
 
 
-            self.rbm_stack["hid--pen"].cd1(hidden_states_vis2hid, n_iterations)
-            hidden_states_hid2pen = copy.deepcopy(self.rbm_stack["hid--pen"].get_h_given_v(hidden_states_vis2hid)[0])
+            self.rbm_stack["hid--pen"].cd1(hidden_prob, n_iterations)
+            pen_prob = copy.deepcopy(self.rbm_stack["hid--pen"].get_h_given_v(hidden_prob)[0])
 
 
 
@@ -214,11 +215,11 @@ class DeepBeliefNet():
             #hidden_states_hid2pen: (n_samples, n_hidden)
             #lbl_trainset: (n_samples, n_label_units)
 
-            hidden_states_pen = np.concatenate((hidden_states_hid2pen, lbl_trainset), axis=1)
+            top_visible_prob = np.concatenate((pen_prob, lbl_trainset), axis=1)
 
             #Train with Contrastive divergence
             #print("hidden_states_pen", hidden_states_pen.__class__)
-            self.rbm_stack["pen+lbl--top"].cd1(hidden_states_pen, n_iterations)
+            self.rbm_stack["pen+lbl--top"].cd1(top_visible_prob, n_iterations)
 
 
             self.rbm_stack["hid--pen"].untwine_weights()
