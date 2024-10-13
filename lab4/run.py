@@ -4,8 +4,8 @@ from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
 import matplotlib.pyplot as plt
 
-N_TRAIN = 600
-N_TEST = 100
+N_TRAIN = 60000
+N_TEST = 10000
 BATCH_SIZE = 20
 N_ITERATIONS = 11
 
