@@ -198,7 +198,7 @@ def visualize_data(data, filepath):
 def plot_loss(rbm):
     plt.plot(rbm.losses)
     plt.title("MSE Loss vs epoch")
-    plt.xlabel("Weight Update from each Minibatch")
+    plt.xlabel("Weight Update from each Epoch")
     plt.ylabel("Mean Weight values")
     #plt.legend()
     plt.savefig("out/rbm/loss/" + "mse_loss_"+str(rbm.batch_size) + ".png")

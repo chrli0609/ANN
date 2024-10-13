@@ -119,7 +119,7 @@ class DeepBeliefNet():
             top_visible_0_states = top_visible_1_states
 
             self.label_values[i+1,:] = top_visible_1_prob[sample_to_plot, -self.rbm_stack['pen+lbl--top'].n_labels:]
-            print("self.label_values", self.label_values)
+            #print("self.label_values", self.label_values)
 
 
 
