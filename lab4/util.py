@@ -142,7 +142,7 @@ def plot_weight_change(rbm):
     plt.savefig("out/rbm/weights/weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
 
 
-def visualize_data(data):
+def visualize_data(data, filepath):
     """
     Randomly selects 25 rows from a 2D numpy array where each row has 784 columns 
     and reshapes each into a 28x28 image. The function also plots the 25 images.
@@ -171,5 +171,5 @@ def visualize_data(data):
         ax.axis('off')  # Hide axes for clarity
     
     plt.tight_layout()
-    plt.savefig("out/training_data_sample.png")
+    plt.savefig(filepath)
     #plt.show()

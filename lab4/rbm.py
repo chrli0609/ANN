@@ -2,7 +2,7 @@ from util import *
 import random
 import numpy as np
 from math import ceil
-#from sklearn import mean_squared_error
+from sklearn.metrics import root_mean_squared_error
 
 
 class RestrictedBoltzmannMachine():
@@ -140,18 +140,21 @@ class RestrictedBoltzmannMachine():
                 _, h_states = self.get_h_given_v(visible_trainset)
                 reconstruction, _ = self.get_v_given_h(h_states)
 
-                """loss = mean_squared_error(visible_trainset, reconstruction)
-                self.losses.append(loss)
-                print(
-                    "iteration=%7d recon_loss_mse=%4.4f" % (it, loss))"""
+                loss = root_mean_squared_error(visible_trainset, reconstruction)
 
+                visualize_data(reconstruction, "out/rbm/viz_recon/recon_"+str(it)+".png")
+
+                self.losses.append(loss)
+                
                 self.delta_weight_vh_norm.append(
                 np.linalg.norm(self.delta_weight_vh))
                 self.delta_bias_v_norm.append(np.linalg.norm(self.delta_bias_v))
                 self.delta_bias_h_norm.append(np.linalg.norm(self.delta_bias_h))
 
+                print ("iteration=%7d recon_loss=\t%4.4f"%(it, np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=\t%4.4f" % (it, loss))
 
-                print ("iteration=%7d recon_loss=%4.4f"%(it, np.linalg.norm(visible_trainset - reconstruction)))
+
+                
         
         return
 
@@ -234,7 +237,7 @@ class RestrictedBoltzmannMachine():
             #  replace the pass below). \ Note that this section can also be postponed until TASK 4.2, since in this
             #  task, stand-alone RBMs do not contain labels in visible layer.
 
-            support = hidden_minibatch @ self.weight_vh.T + self.bias_v
+            support = (hidden_minibatch @ self.weight_vh.T) + self.bias_v
             support[support < -75] = -75
             p_v_given_h, v = np.zeros(support.shape), np.zeros(support.shape)
 

@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     #print("train_imgs\n", train_imgs)
 
-    visualize_data(train_imgs)
+    visualize_data(train_imgs, "out/training_data_sample.png")
 
     rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 

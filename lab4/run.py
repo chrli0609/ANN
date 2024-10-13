@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 N_TRAIN = 60000
 N_TEST = 10000
 BATCH_SIZE = 20
-N_ITERATIONS = 10
+N_ITERATIONS = 20
 
 if __name__ == "__main__":
 
@@ -27,12 +27,21 @@ if __name__ == "__main__":
                                      batch_size=BATCH_SIZE
     )
     
+
+    visualize_data(train_imgs, "out/training_data_sample.png")
     rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
     #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 
     plot_weight_change(rbm)
 
-    
+
+    plt.plot(rbm.delta_bias_v_norm, label="Delta bias v norm")
+    plt.plot(rbm.delta_bias_h_norm, label="Delta bias h norm")
+
+    plt.xlabel('Iteration')
+    plt.ylabel('Norm of bias over time')
+    plt.legend()
+    plt.savefig("out/rbm/weights/delta_bias_v_h_norm.png")
     
     ''' deep- belief net '''
 
