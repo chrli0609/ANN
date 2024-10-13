@@ -112,7 +112,7 @@ def viz_rf(weights,it,grid):
             axs[x,y].set_xticks([]);
             axs[x,y].set_yticks([]);
             axs[x,y].imshow(weights[:,:,y+grid[1]*x], cmap="bwr", vmin=-imax, vmax=imax, interpolation=None)
-    plt.savefig("rf.iter%06d.png"%it)
+    plt.savefig("out/rbm/viz_rf/rf.iter%06d.png"%it)
     plt.close('all')
 
 def stitch_video(fig,imgs):
@@ -122,3 +122,54 @@ def stitch_video(fig,imgs):
     import matplotlib.animation as animation
     
     return animation.ArtistAnimation(fig, imgs, interval=100, blit=True, repeat=False)    
+
+
+def plot_weight_change(rbm):
+    plt.plot(rbm.debug_delta_weights, color="blue")
+    plt.title("Delta W for each sample")
+    plt.xlabel("Sample")
+    plt.ylabel("Delta W")
+    #plt.legend()
+    plt.savefig("out/rbm/weights/delta_weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
+    #plt.show()
+
+
+    plt.plot(rbm.debug_weights, color="blue")
+    plt.title("Mean weight values for each sample")
+    plt.xlabel("Sample")
+    plt.ylabel("Mean Weight values")
+    #plt.legend()
+    plt.savefig("out/rbm/weights/weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
+
+
+def visualize_data(data):
+    """
+    Randomly selects 25 rows from a 2D numpy array where each row has 784 columns 
+    and reshapes each into a 28x28 image. The function also plots the 25 images.
+    
+    Args:
+    data (numpy.ndarray): A 2D numpy array of shape (n, 784), where n is the number of rows.
+    
+    Returns:
+    numpy.ndarray: A 3D numpy array of shape (25, 28, 28) containing the reshaped images.
+    """
+    if data.shape[1] != 784:
+        raise ValueError("Each row in the input array must have 784 columns.")
+    
+    # Randomly select 25 rows
+    indices = np.random.choice(data.shape[0], 25, replace=False)
+    
+    # Reshape each row into a 28x28 image
+    images = data[indices].reshape(25, 28, 28)
+    
+    # Plot the images in a 5x5 grid
+    fig, axes = plt.subplots(5, 5, figsize=(10, 10))
+    axes = axes.flatten()
+    
+    for i, ax in enumerate(axes):
+        ax.imshow(images[i], cmap='gray')
+        ax.axis('off')  # Hide axes for clarity
+    
+    plt.tight_layout()
+    plt.savefig("out/training_data_sample.png")
+    #plt.show()

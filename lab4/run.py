@@ -1,13 +1,13 @@
 from util import *
 from rbm import RestrictedBoltzmannMachine 
+#from rbm_batch import RestrictedBoltzmannMachine 
 from dbn import DeepBeliefNet
-
+import matplotlib.pyplot as plt
 
 N_TRAIN = 60000
 N_TEST = 10000
-#N_ITERATIONS = 6000
-BATCH_SIZE = 10
-N_ITERATIONS = int(N_TRAIN/BATCH_SIZE)
+BATCH_SIZE = 20
+N_ITERATIONS = 10
 
 if __name__ == "__main__":
 
@@ -30,14 +30,9 @@ if __name__ == "__main__":
     rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
     #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 
-    plt.plot(rbm.debug_weights, color="blue")
-    plt.title("Delta W for each sample")
-    plt.xlabel("Sample")
-    plt.ylabel("Delta W")
-    #plt.legend()
-    plt.savefig("out/rbm/weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
-    #plt.show()
+    plot_weight_change(rbm)
 
+    
     
     ''' deep- belief net '''
 
