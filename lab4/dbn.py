@@ -2,6 +2,8 @@ import copy
 
 from util import *
 from rbm import RestrictedBoltzmannMachine
+#from rbm_ex import RestrictedBoltzmannMachine
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -84,11 +86,11 @@ class DeepBeliefNet():
 
         #1. Input true_img to visible layaer of rbm[vis--hid]
         #2. Get Hidden probabilities of rbm[vis--hid]
-        hidden_prob, _ = self.rbm_stack["vis--hid"].get_h_given_v_dir(visible_minibatch=true_img)
+        _ , hidden_states = self.rbm_stack["vis--hid"].get_h_given_v_dir(visible_minibatch=true_img)
         
         #3. Set Hidden probabilities of rbm[vis--hid] to visible nodes of rbm[hid--pen]
         #4. Get Hidden Probabilities of rbm[hid--pen]
-        pen_prob, pen_states = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=hidden_prob)
+        pen_prob, pen_states = self.rbm_stack['hid--pen'].get_h_given_v_dir(visible_minibatch=hidden_states)
         
         
         #5. Set hidden probabilities of rbm[hid--pen] to visible nodes of rbm[pen+lbl--top]
@@ -227,51 +229,28 @@ class DeepBeliefNet():
             """ 
             CD-1 training for vis--hid 
             """
-            
-            self.rbm_stack["vis--hid"].cd1(visible_trainset=vis_trainset, n_iterations=n_iterations)
-
-            hidden_prob = copy.deepcopy(self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset)[0])
-
-
-
+            self.rbm_stack["vis--hid"].cd1(vis_trainset, n_iterations)
             self.savetofile_rbm(loc="trained_rbm",name="vis--hid")
 
             print ("training hid--pen")
             """ 
             CD-1 training for hid--pen 
             """
+            self.rbm_stack["vis--hid"].untwine_weights()
             
-            #print("hidden_states_vis2hid", hidden_states_vis2hid.__class__)
-            #print("self.rbm_stack["+"vis--hid"+"].get_h_given_v(vis_trainset)", self.rbm_stack["vis--hid"].get_h_given_v(vis_trainset).__class__)
-
-
-
-            self.rbm_stack["hid--pen"].cd1(hidden_prob, n_iterations)
-            pen_prob = copy.deepcopy(self.rbm_stack["hid--pen"].get_h_given_v(hidden_prob)[0])
-
-
-
-
-            self.rbm_stack["vis--hid"].untwine_weights()            
-            self.savetofile_rbm(loc="trained_rbm",name="hid--pen")            
-
+            hidden_states = self.rbm_stack["vis--hid"].get_h_given_v_dir(vis_trainset)[1]
+            self.rbm_stack["hid--pen"].cd1(hidden_states, n_iterations)
+            self.savetofile_rbm(loc="trained_rbm",name="hid--pen")
+                                
             print ("training pen+lbl--top")
             """ 
             CD-1 training for pen+lbl--top 
             """
-
-            #Clamp labels with labels
-            #hidden_states_hid2pen: (n_samples, n_hidden)
-            #lbl_trainset: (n_samples, n_label_units)
-
-            top_visible_prob = np.concatenate((pen_prob, lbl_trainset), axis=1)
-
-            #Train with Contrastive divergence
-            #print("hidden_states_pen", hidden_states_pen.__class__)
-            self.rbm_stack["pen+lbl--top"].cd1(top_visible_prob, n_iterations)
-
-
             self.rbm_stack["hid--pen"].untwine_weights()
+
+            pen_states = self.rbm_stack["hid--pen"].get_h_given_v_dir(hidden_states)[1]
+            top_visible_prob = np.concatenate((pen_states, lbl_trainset), axis=1)
+            self.rbm_stack["pen+lbl--top"].cd1(top_visible_prob, n_iterations)
             self.savetofile_rbm(loc="trained_rbm",name="pen+lbl--top")            
 
         return    

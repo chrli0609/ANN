@@ -1,13 +1,15 @@
 from util import *
 from rbm import RestrictedBoltzmannMachine 
-#from rbm_batch import RestrictedBoltzmannMachine 
+#from rbm_ex import RestrictedBoltzmannMachine 
 from dbn import DeepBeliefNet
+#from dbn_ex import DeepBeliefNet
+
 import matplotlib.pyplot as plt
 
-N_TRAIN = 60000
-N_TEST = 10000
+N_TRAIN = 600
+N_TEST = 100
 BATCH_SIZE = 20
-N_ITERATIONS = 11
+N_ITERATIONS = 20
 
 if __name__ == "__main__":
 
@@ -28,11 +30,11 @@ if __name__ == "__main__":
     )
     
 
-    visualize_data(train_imgs, "out/training_data_sample.png")
+    #visualize_data(train_imgs, "out/training_data_sample.png")
+    #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS, plot=True, plot_title=True, visualize_w=True)
     rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
-    #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 
-    plot_weight_change(rbm)
+    '''plot_weight_change(rbm)
     plot_loss(rbm)
 
     plt.clf()
@@ -47,7 +49,7 @@ if __name__ == "__main__":
 
     plt.clf()
     plt.cla()
-    plt.close()
+    plt.close()'''
     
     ''' deep- belief net '''
 

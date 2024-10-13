@@ -7,6 +7,7 @@ mkdir -p out/rbm
 
 rm trained_rbm/*
 rm trained_dbn/*
+rm out/rbm/loss/*
 rm out/rbm/viz_recon/*
 rm out/rbm/viz_rf/*
 rm out/rbm/viz_weights/*

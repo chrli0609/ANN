@@ -108,7 +108,7 @@ class RestrictedBoltzmannMachine():
 
             for batch in range(n_batches):
             
-                v_batch_prob_0 = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
+                v_batch_prob_0 = visible_trainset[batch*self.batch_size:(batch+1)*self.batch_size, :]
             
                 h_batch_prob_0, h_batch_states_0 = self.get_h_given_v(v_batch_prob_0)
             
