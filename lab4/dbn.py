@@ -153,15 +153,15 @@ class DeepBeliefNet():
             
             _, hidden_0_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(top_visible_states)
 
-            _, visible_0_states = self.rbm_stack["pen+lbl--top"].get_v_given_h(hidden_0_states)
+            _, visible_1_states = self.rbm_stack["pen+lbl--top"].get_v_given_h(hidden_0_states)
 
-            _, hidden_1_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(visible_0_states)
+            _, hidden_1_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(visible_1_states)
 
             top_visible_states= hidden_1_states
 
             #============================== GIBBS SAMPLING ENDS HERE =========================
 
-            _, hidden_states = self.rbm_stack["hid--pen"].get_v_given_h_dir(hidden_1_states)
+            _, hidden_states = self.rbm_stack["hid--pen"].get_v_given_h_dir(visible_1_states)
 
             visible_prob, _ = self.rbm_stack["vis--hid"].get_v_given_h_dir(hidden_states)
 

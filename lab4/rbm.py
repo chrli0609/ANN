@@ -182,7 +182,7 @@ class RestrictedBoltzmannMachine():
 
 
         #================================L2 NORM BETWEEN DELTA W AND ORIGIN EACH SAMPLE =================================
-        self.debug_weights.append(np.linalg.norm(self.weight_vh))
+        self.debug_weights.append(np.mean(self.weight_vh))
         self.debug_delta_weights.append(np.linalg.norm(self.delta_weight_vh))
 
         
@@ -240,14 +240,14 @@ class RestrictedBoltzmannMachine():
 
             # split into two part and apply different activation functions
             p_v_given_h[:, :-
-                        self.labels_number] = sigmoid(support[:, :-self.labels_number])
+                        self.n_labels] = sigmoid(support[:, :-self.n_labels])
             p_v_given_h[:, -
-                        self.labels_number:] = softmax(support[:, -self.labels_number:])
+                        self.n_labels:] = softmax(support[:, -self.n_labels:])
 
-            v[:, :-self.labels_number] = sample_binary(
-                p_v_given_h[:, :-self.labels_number])
-            v[:, -self.labels_number:] = sample_categorical(
-                p_v_given_h[:, -self.labels_number:])
+            v[:, :-self.n_labels] = sample_binary(
+                p_v_given_h[:, :-self.n_labels])
+            v[:, -self.n_labels:] = sample_categorical(
+                p_v_given_h[:, -self.n_labels:])
 
         else:
             # compute probabilities and activations (samples from probabilities) of visible layer (
