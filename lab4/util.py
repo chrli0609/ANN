@@ -204,6 +204,7 @@ def plot_loss(rbm):
     plt.savefig("out/rbm/loss/" + "mse_loss_"+str(rbm.batch_size) + ".png")
 
 def plot_3d_array(array):
+    array=array.T
     # Get array dimensions
     rows, cols = array.shape
     
@@ -221,11 +222,12 @@ def plot_3d_array(array):
     ax.plot_surface(x, y, z, cmap='viridis')
     
     # Set axis labels
-    ax.set_xlabel('Columns (y-axis)')
-    ax.set_ylabel('Rows (x-axis)')
-    ax.set_zlabel('Values (z-axis)')
+    ax.set_ylabel('Labels')
+    ax.set_xlabel('Step')
+    ax.set_zlabel('Probability')
     
     # Set plot title
-    ax.set_title('3D Plot of Array Values')
+    ax.set_title('Probabilities of labels for an image during recognition')
     
     plt.show()
+    plt.savefig("out/dbn/label_values.png")

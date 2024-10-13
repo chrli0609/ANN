@@ -54,7 +54,7 @@ class DeepBeliefNet():
 
         self.print_period = 2000
 
-        self.label_values = np.zeros((self.n_gibbs_recog, self.rbm_stack["pen+lbl--top"].n_labels))
+        self.label_values = np.zeros((self.n_gibbs_recog+1, self.rbm_stack["pen+lbl--top"].n_labels))
         
         return
 
@@ -66,6 +66,10 @@ class DeepBeliefNet():
           true_imgs: visible data shaped (number of samples, size of visible layer)
           true_lbl: true labels shaped (number of samples, size of label layer). Used only for calculating accuracy, not driving the net
         """
+        sample_to_plot = 2
+
+
+        self.label_values = np.zeros((self.n_gibbs_recog+1, self.rbm_stack["pen+lbl--top"].n_labels))
         
         n_samples = true_img.shape[0]
         
@@ -90,10 +94,10 @@ class DeepBeliefNet():
         #5. Set hidden probabilities of rbm[hid--pen] to visible nodes of rbm[pen+lbl--top]
         top_visible_0_states = np.concatenate((pen_states, lbl), axis=1)
         
-        
+        self.label_values[0,:] = lbl[sample_to_plot]
 
         for i in range(self.n_gibbs_recog):
-
+            
             #--> prev iter get_h_given_v
             #get_v_given_h
             #get_h_given_v     --> next iter
@@ -114,7 +118,7 @@ class DeepBeliefNet():
             # v_0_next_it = v_1_curr_it 
             top_visible_0_states = top_visible_1_states
 
-            self.label_values[i,:] = top_visible_1_states[0,-self.rbm_stack['pen+lbl--top'].n_labels:]
+            self.label_values[i+1,:] = top_visible_1_prob[sample_to_plot, -self.rbm_stack['pen+lbl--top'].n_labels:]
             print("self.label_values", self.label_values)
 
 
