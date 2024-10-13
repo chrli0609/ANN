@@ -86,30 +86,37 @@ class DeepBeliefNet():
         
         
         #5. Set hidden probabilities of rbm[hid--pen] to visible nodes of rbm[pen+lbl--top]
-        top_visible_states = np.concatenate((pen_states, lbl), axis=1)
+        top_visible_0_states = np.concatenate((pen_states, lbl), axis=1)
         
         
 
-        for _ in range(self.n_gibbs_recog):
+        for i in range(self.n_gibbs_recog):
 
             #--> prev iter get_h_given_v
             #get_v_given_h
             #get_h_given_v     --> next iter
 
-            _ , top_hidden_0_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=top_visible_states)
+            # v_0 --> h_0
+            _ , top_hidden_0_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=top_visible_0_states)
 
-            top_visible_1_prob, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_0_states)
+            # h_0 --> v_1
+            top_visible_1_prob, top_visible_1_states = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_0_states)
 
-            _ , top_hidden_1_states = self.rbm_stack['pen+lbl--top'].get_h_given_v(visible_minibatch=top_visible_1_prob)
-
-
-            top_visible_states, _ = self.rbm_stack['pen+lbl--top'].get_v_given_h(hidden_minibatch=top_hidden_1_states)
-
-
-
+            
+            #Clamp on pen units
+            top_visible_1_states[:,:-self.rbm_stack['pen+lbl--top'].n_labels] = pen_states
+            
 
 
-        predicted_lbl = sample_categorical(softmax(top_visible_states[:,-self.rbm_stack["pen+lbl--top"].n_labels:]))
+            #Prepare for next iteration
+            # v_0_next_it = v_1_curr_it 
+            top_visible_0_states = top_visible_1_states
+
+
+
+
+
+        predicted_lbl = top_visible_1_states[:,-self.rbm_stack["pen+lbl--top"].n_labels:]
         #predicted_lbl = np.zeros(true_lbl.shape)
             
         print ("accuracy = %.2f%%"%(100.*np.mean(np.argmax(predicted_lbl,axis=1)==np.argmax(true_lbl,axis=1))))
@@ -142,26 +149,30 @@ class DeepBeliefNet():
         pen_units_states = np.random.choice([0, 1], size=(n_sample, self.rbm_stack["pen+lbl--top"].ndim_visible-self.rbm_stack["pen+lbl--top"].n_labels))
         #vis = np.random.rand(n_sample,self.sizes["vis"])
 
-        top_visible_states = np.concatenate((pen_units_states, lbl), axis=1)
+        top_visible_0_states = np.concatenate((pen_units_states, lbl), axis=1)
 
 
         #2. Perform gibb sampling
         
-        for _ in range(self.n_gibbs_gener):
+        for i in range(self.n_gibbs_gener):
 
             #============================== GIBBS SAMPLING STARTS HERE =========================
             
-            _, hidden_0_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(top_visible_states)
+            _, hidden_0_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(top_visible_0_states)
 
             _, visible_1_states = self.rbm_stack["pen+lbl--top"].get_v_given_h(hidden_0_states)
 
-            _, hidden_1_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(visible_1_states)
+            #_, hidden_1_states = self.rbm_stack["pen+lbl--top"].get_h_given_v(visible_1_states)
 
-            top_visible_states= hidden_1_states
+            #clamp labels
+            visible_1_states[:,-self.rbm_stack["pen+lbl--top"].n_labels:] = lbl
+
+            # v_0_next_it = v_1_curr_it
+            top_visible_0_states = visible_1_states
 
             #============================== GIBBS SAMPLING ENDS HERE =========================
 
-            _, hidden_states = self.rbm_stack["hid--pen"].get_v_given_h_dir(visible_1_states)
+            _, hidden_states = self.rbm_stack["hid--pen"].get_v_given_h_dir(visible_1_states[:,:-self.rbm_stack["pen+lbl--top"].n_labels])
 
             visible_prob, _ = self.rbm_stack["vis--hid"].get_v_given_h_dir(hidden_states)
 
