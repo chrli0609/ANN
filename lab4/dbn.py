@@ -185,11 +185,11 @@ class DeepBeliefNet():
 
             _, hidden_states = self.rbm_stack["hid--pen"].get_v_given_h_dir(visible_1_states[:,:-self.rbm_stack["pen+lbl--top"].n_labels])
 
-            visible_prob, _ = self.rbm_stack["vis--hid"].get_v_given_h_dir(hidden_states)
+            _ , visible_states = self.rbm_stack["vis--hid"].get_v_given_h_dir(hidden_states)
 
 
 
-            vis = visible_prob
+            vis = visible_states
             
             
             records.append( [ ax.imshow(vis.reshape(self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True, interpolation=None) ] )
