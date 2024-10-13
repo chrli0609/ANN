@@ -145,16 +145,15 @@ class RestrictedBoltzmannMachine():
                 visualize_data(reconstruction, "out/rbm/viz_recon/recon_"+str(it)+".png")
 
                 self.losses.append(loss)
-                
+                print("iteration=%7d recon_loss_mse=%4.4f" % (it, loss))
+
                 self.delta_weight_vh_norm.append(
                 np.linalg.norm(self.delta_weight_vh))
                 self.delta_bias_v_norm.append(np.linalg.norm(self.delta_bias_v))
                 self.delta_bias_h_norm.append(np.linalg.norm(self.delta_bias_h))
 
-                print ("iteration=%7d recon_loss=\t%4.4f"%(it, np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=\t%4.4f" % (it, loss))
 
-
-                
+                print ("iteration=%7d recon_loss=%4.4f"%(it, np.linalg.norm(visible_trainset - reconstruction)))
         
         return
 
