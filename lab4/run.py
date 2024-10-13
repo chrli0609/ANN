@@ -4,10 +4,10 @@ from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
 import matplotlib.pyplot as plt
 
-N_TRAIN = 60000
-N_TEST = 10000
+N_TRAIN = 30000
+N_TEST = 5000
 BATCH_SIZE = 20
-N_ITERATIONS = 20
+N_ITERATIONS = 11
 
 if __name__ == "__main__":
 
@@ -34,6 +34,7 @@ if __name__ == "__main__":
 
     plot_weight_change(rbm)
 
+    plt.clf()
 
     plt.plot(rbm.delta_bias_v_norm, label="Delta bias v norm")
     plt.plot(rbm.delta_bias_h_norm, label="Delta bias h norm")
@@ -66,8 +67,10 @@ if __name__ == "__main__":
         digit_1hot[0,digit] = 1
         dbn.generate(digit_1hot, name="rbms")
 
-    ''' fine-tune wake-sleep training '''
 
+
+    ''' fine-tune wake-sleep training '''
+    '''
     dbn.train_wakesleep_finetune(vis_trainset=train_imgs, lbl_trainset=train_lbls, n_iterations=N_ITERATIONS)
 
     dbn.recognize(train_imgs, train_lbls)
@@ -78,3 +81,4 @@ if __name__ == "__main__":
         digit_1hot = np.zeros(shape=(1,10))
         digit_1hot[0,digit] = 1
         dbn.generate(digit_1hot, name="dbn")
+    '''

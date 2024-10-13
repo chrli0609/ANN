@@ -104,7 +104,7 @@ class RestrictedBoltzmannMachine():
 
         for it in range(n_iterations):
 
-            np.random.shuffle(visible_trainset)
+            #np.random.shuffle(visible_trainset)
 
             for batch in range(n_batches):
             
@@ -141,19 +141,18 @@ class RestrictedBoltzmannMachine():
                 reconstruction, _ = self.get_v_given_h(h_states)
 
                 loss = root_mean_squared_error(visible_trainset, reconstruction)
-
-                visualize_data(reconstruction, "out/rbm/viz_recon/recon_"+str(it)+".png")
+                
+                if self.is_bottom:
+                    visualize_data(reconstruction, "out/rbm/viz_recon/recon_"+str(it)+".png")
 
                 self.losses.append(loss)
-                print("iteration=", it, "recon_loss_mse=",loss)
+                #print("iteration=", it, )
 
-                self.delta_weight_vh_norm.append(
-                np.linalg.norm(self.delta_weight_vh))
+                self.delta_weight_vh_norm.append(np.linalg.norm(self.delta_weight_vh))
                 self.delta_bias_v_norm.append(np.linalg.norm(self.delta_bias_v))
                 self.delta_bias_h_norm.append(np.linalg.norm(self.delta_bias_h))
 
-
-                print ("iteration=", it, "recon_loss=", np.linalg.norm(visible_trainset - reconstruction))
+                print ("iteration=", it, "recon_loss=", (np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=",loss)
         
         return
 

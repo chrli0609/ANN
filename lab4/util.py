@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+#from run import N_TRAIN
+
+
+#INDICES = np.random.choice(N_TRAIN, 25, replace=False)
+
+
 def sigmoid(support):
     
     """ 
@@ -125,9 +131,9 @@ def stitch_video(fig,imgs):
 
 
 def plot_weight_change(rbm):
-    plt.plot(rbm.debug_delta_weights, color="blue")
-    plt.title("Delta W for each sample")
-    plt.xlabel("Sample")
+    plt.plot(rbm.delta_weight_vh_norm, color="blue")
+    plt.title("Norm of delta W for every other epoch")
+    plt.xlabel("Weight Update from each epoch")
     plt.ylabel("Delta W")
     #plt.legend()
     plt.savefig("out/rbm/weights/delta_weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
@@ -136,7 +142,7 @@ def plot_weight_change(rbm):
 
     plt.plot(rbm.debug_weights, color="blue")
     plt.title("Mean weight values for each sample")
-    plt.xlabel("Sample")
+    plt.xlabel("Weight Update from each Minibatch")
     plt.ylabel("Mean Weight values")
     #plt.legend()
     plt.savefig("out/rbm/weights/weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
@@ -154,10 +160,13 @@ def visualize_data(data, filepath):
     numpy.ndarray: A 3D numpy array of shape (25, 28, 28) containing the reshaped images.
     """
     if data.shape[1] != 784:
-        raise ValueError("Each row in the input array must have 784 columns.")
+        raise ValueError("Each row in the input array must have 784 columns.", data.shape[1], "found")
     
     # Randomly select 25 rows
-    indices = np.random.choice(data.shape[0], 25, replace=False)
+    #indices = np.random.choice(data.shape[0], 25, replace=False)
+    INDICES = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+    
+    indices = INDICES
     
     # Reshape each row into a 28x28 image
     images = data[indices].reshape(25, 28, 28)
@@ -172,4 +181,7 @@ def visualize_data(data, filepath):
     
     plt.tight_layout()
     plt.savefig(filepath)
+    plt.clf()
+    plt.cla()
+    plt.close()
     #plt.show()
