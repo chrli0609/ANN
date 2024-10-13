@@ -101,7 +101,7 @@ class RestrictedBoltzmannMachine():
         for it in range(n_iterations):
             
             #print("visible_trainset", visible_trainset.shape)
-            v_batch_prob_0 = visible_trainset[it*self.batch_size:(it+1)*self.batch_size][:]
+            v_batch_prob_0 = visible_trainset#[it*self.batch_size:(it+1)*self.batch_size][:]
 
             #print("v_batch_prob_0\t\t", v_batch_prob_0)
 
@@ -142,14 +142,14 @@ class RestrictedBoltzmannMachine():
             #rint("h_batch_states_1\t\t", h_batch_states_1)
             
             #self.update_params(v_states_0, h_states_0, v_states_1, h_states_1)
-            tmp = np.concatenate((v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1), axis=1)
+            #tmp = np.concatenate((v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1), axis=1)
             #print("v_batch_prob_0", np.sum(v_batch_prob_0))
             #print("h_batch_states_0", np.sum(h_batch_states_0))
             #print("v_batch_prob_1", np.sum(v_batch_prob_1))
             #print("h_batch_prob_1", np.sum(h_batch_prob_1))
             #print("sum of state values", np.sum(tmp))
             #self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1, n_samples)
-            self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_states_1, n_samples)
+            self.update_params(v_batch_prob_0, h_batch_states_0, v_batch_prob_1, h_batch_prob_1)
 
 
 
@@ -169,12 +169,14 @@ class RestrictedBoltzmannMachine():
             
             if it % self.print_period == 0 :
 
-                print ("iteration=%7d recon_loss=%4.4f"%(it, np.linalg.norm(v_batch_prob_0 - v_batch_states_1)))
+                
+
+                print ("iteration=%7d recon_loss=%4.4f"%(it, np.linalg.norm(v_batch_prob_0 - v_batch_prob_1)))
         
         return
     
 
-    def update_params(self,v_0,h_0,v_k,h_k, n_samples):
+    def update_params(self,v_0,h_0,v_k,h_k):
 
         """Update the weight and bias parameters.
 
@@ -211,10 +213,10 @@ class RestrictedBoltzmannMachine():
         delta_weight = (positive_grad - negative_grad) / self.batch_size
         """
 
-        delta_bias_v = np.zeros(self.ndim_visible)
-        delta_bias_h = np.zeros(self.ndim_hidden)
+        #delta_bias_v = np.zeros(self.ndim_visible)
+        #delta_bias_h = np.zeros(self.ndim_hidden)
         
-        delta_weight = np.zeros((v_0.shape[1], h_0.shape[1]))
+        #delta_weight = np.zeros((v_0.shape[1], h_0.shape[1]))
 
         # Update rule for the weights based on Contrastive Divergence
         # Calculate the outer product for each sample and average over all samples
@@ -258,9 +260,9 @@ class RestrictedBoltzmannMachine():
         
 
         
-        self.delta_bias_v = delta_bias_v / n_samples
-        self.delta_weight_vh = delta_weight / n_samples
-        self.delta_bias_h = delta_bias_h  / n_samples
+        self.delta_bias_v = delta_bias_v / self.batch_size
+        self.delta_weight_vh = delta_weight / self.batch_size
+        self.delta_bias_h = delta_bias_h  / self.batch_size
 
         
         self.bias_v += self.delta_bias_v

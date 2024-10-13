@@ -6,7 +6,7 @@ from dbn import DeepBeliefNet
 N_TRAIN = 60000
 N_TEST = 10000
 #N_ITERATIONS = 6000
-BATCH_SIZE = 1000
+BATCH_SIZE = 10
 N_ITERATIONS = int(N_TRAIN/BATCH_SIZE)
 
 if __name__ == "__main__":
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     )
     
     rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
-    rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
+    #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 
     plt.plot(rbm.debug_weights, color="blue")
     plt.title("Delta W for each sample")
