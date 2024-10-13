@@ -4,8 +4,8 @@ from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
 import matplotlib.pyplot as plt
 
-N_TRAIN = 30000
-N_TEST = 5000
+N_TRAIN = 60000
+N_TEST = 10000
 BATCH_SIZE = 20
 N_ITERATIONS = 11
 
@@ -33,6 +33,7 @@ if __name__ == "__main__":
     #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 
     plot_weight_change(rbm)
+    plot_loss(rbm)
 
     plt.clf()
 
@@ -43,6 +44,10 @@ if __name__ == "__main__":
     plt.ylabel('Norm of bias over time')
     plt.legend()
     plt.savefig("out/rbm/weights/delta_bias_v_h_norm.png")
+
+    plt.clf()
+    plt.cla()
+    plt.close()
     
     ''' deep- belief net '''
 
@@ -68,6 +73,7 @@ if __name__ == "__main__":
         dbn.generate(digit_1hot, name="rbms")
 
 
+    plot_3d_array(dbn.label_values)
 
     ''' fine-tune wake-sleep training '''
     '''

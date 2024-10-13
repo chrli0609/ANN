@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 #from run import N_TRAIN
 
@@ -131,21 +132,29 @@ def stitch_video(fig,imgs):
 
 
 def plot_weight_change(rbm):
-    plt.plot(rbm.delta_weight_vh_norm, color="blue")
-    plt.title("Norm of delta W for every other epoch")
-    plt.xlabel("Weight Update from each epoch")
-    plt.ylabel("Delta W")
+    plt.plot(rbm.debug_delta_weights, color="blue")
+    plt.title("Norm of delta W for each minibatch update")
+    plt.xlabel("Minibatch")
+    plt.ylabel("Norm of delta W")
     #plt.legend()
     plt.savefig("out/rbm/weights/delta_weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
     #plt.show()
 
+    plt.clf()
+    plt.cla()
+    plt.close()
 
     plt.plot(rbm.debug_weights, color="blue")
-    plt.title("Mean weight values for each sample")
-    plt.xlabel("Weight Update from each Minibatch")
-    plt.ylabel("Mean Weight values")
+    plt.title("Norm of weight values for each sample")
+    plt.xlabel("Minibatch")
+    plt.ylabel("Norm of Weight values")
     #plt.legend()
     plt.savefig("out/rbm/weights/weight_vs_it_batch_size_" + str(rbm.batch_size) + ".png")
+
+
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 
 def visualize_data(data, filepath):
@@ -165,7 +174,7 @@ def visualize_data(data, filepath):
     # Randomly select 25 rows
     #indices = np.random.choice(data.shape[0], 25, replace=False)
     INDICES = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
-    
+
     indices = INDICES
     
     # Reshape each row into a 28x28 image
@@ -185,3 +194,38 @@ def visualize_data(data, filepath):
     plt.cla()
     plt.close()
     #plt.show()
+
+def plot_loss(rbm):
+    plt.plot(rbm.losses)
+    plt.title("MSE Loss vs epoch")
+    plt.xlabel("Weight Update from each Minibatch")
+    plt.ylabel("Mean Weight values")
+    #plt.legend()
+    plt.savefig("out/rbm/loss/" + "mse_loss_"+str(rbm.batch_size) + ".png")
+
+def plot_3d_array(array):
+    # Get array dimensions
+    rows, cols = array.shape
+    
+    # Create meshgrid for x and y axes
+    x, y = np.meshgrid(range(cols), range(rows))
+    
+    # Get values for the z-axis from the array
+    z = array
+    
+    # Create 3D plot
+    fig = plt.figure(figsize=(10, 7))
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # Plot a surface plot using the array values as the z coordinates
+    ax.plot_surface(x, y, z, cmap='viridis')
+    
+    # Set axis labels
+    ax.set_xlabel('Columns (y-axis)')
+    ax.set_ylabel('Rows (x-axis)')
+    ax.set_zlabel('Values (z-axis)')
+    
+    # Set plot title
+    ax.set_title('3D Plot of Array Values')
+    
+    plt.show()

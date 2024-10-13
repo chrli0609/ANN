@@ -99,7 +99,7 @@ class RestrictedBoltzmannMachine():
 
 
         if n_iterations * self.batch_size != n_samples:
-            print("AN ERROR HAS OCCURREEEEEEDDDD: n_iterations * self.batch_size != n_samples")
+            print("WARNING: n_iterations * self.batch_size != n_samples")
         
 
         for it in range(n_iterations):
@@ -128,6 +128,18 @@ class RestrictedBoltzmannMachine():
             # [DONE TASK 4.1] update the parameters using function 'update_params'
             
             # visualize once in a while when visible layer is input images
+
+
+            _, h_states = self.get_h_given_v(visible_trainset)
+            reconstruction, _ = self.get_v_given_h(h_states)
+
+            loss = root_mean_squared_error(visible_trainset, reconstruction)
+            self.losses.append(loss)
+            self.delta_weight_vh_norm.append(np.linalg.norm(self.delta_weight_vh))
+            self.delta_bias_v_norm.append(np.linalg.norm(self.delta_bias_v))
+            self.delta_bias_h_norm.append(np.linalg.norm(self.delta_bias_h))
+
+            print ("iteration=", it, "recon_loss=", (np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=",loss)
             
             if it % self.rf["period"] == 0 and self.is_bottom:
                 
@@ -135,24 +147,14 @@ class RestrictedBoltzmannMachine():
 
             # print progress
             
-            if it % self.print_period == 0:
-                
-                _, h_states = self.get_h_given_v(visible_trainset)
-                reconstruction, _ = self.get_v_given_h(h_states)
-
-                loss = root_mean_squared_error(visible_trainset, reconstruction)
-                
+            if it % self.print_period == 0:  
                 if self.is_bottom:
                     visualize_data(reconstruction, "out/rbm/viz_recon/recon_"+str(it)+".png")
 
-                self.losses.append(loss)
+                
                 #print("iteration=", it, )
 
-                self.delta_weight_vh_norm.append(np.linalg.norm(self.delta_weight_vh))
-                self.delta_bias_v_norm.append(np.linalg.norm(self.delta_bias_v))
-                self.delta_bias_h_norm.append(np.linalg.norm(self.delta_bias_h))
-
-                print ("iteration=", it, "recon_loss=", (np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=",loss)
+                
         
         return
 
@@ -183,7 +185,7 @@ class RestrictedBoltzmannMachine():
 
 
         #================================L2 NORM BETWEEN DELTA W AND ORIGIN EACH SAMPLE =================================
-        self.debug_weights.append(np.mean(self.weight_vh))
+        self.debug_weights.append(np.linalg.norm(self.weight_vh))
         self.debug_delta_weights.append(np.linalg.norm(self.delta_weight_vh))
 
         

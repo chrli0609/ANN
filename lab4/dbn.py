@@ -53,6 +53,8 @@ class DeepBeliefNet():
         self.n_gibbs_wakesleep = 5
 
         self.print_period = 2000
+
+        self.label_values = np.zeros((self.n_gibbs_recog, self.rbm_stack["pen+lbl--top"].n_labels))
         
         return
 
@@ -111,6 +113,9 @@ class DeepBeliefNet():
             #Prepare for next iteration
             # v_0_next_it = v_1_curr_it 
             top_visible_0_states = top_visible_1_states
+
+            self.label_values[i,:] = top_visible_1_states[0,-self.rbm_stack['pen+lbl--top'].n_labels:]
+            print("self.label_values", self.label_values)
 
 
 
