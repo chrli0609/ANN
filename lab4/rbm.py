@@ -139,7 +139,7 @@ class RestrictedBoltzmannMachine():
             self.delta_bias_v_norm.append(np.linalg.norm(self.delta_bias_v))
             self.delta_bias_h_norm.append(np.linalg.norm(self.delta_bias_h))
 
-            print ("iteration=", it, "recon_loss=", (np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=",loss)
+            print ("iteration=", it, "\trecon_loss=", (np.linalg.norm(visible_trainset - reconstruction)), "\trecon_loss_mse=",loss)
             
             if it % self.rf["period"] == 0 and self.is_bottom:
                 

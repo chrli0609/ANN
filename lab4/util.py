@@ -195,15 +195,15 @@ def visualize_data(data, filepath):
     plt.close()
     #plt.show()
 
-def plot_loss(rbm):
-    plt.plot(rbm.losses)
+def plot_loss(rbm, filepath, layername):
+    plt.plot(rbm.losses, label=layername)
     plt.title("MSE Loss vs epoch")
     plt.xlabel("Weight Update from each Epoch")
     plt.ylabel("Mean Weight values")
-    #plt.legend()
-    plt.savefig("out/rbm/loss/" + "mse_loss_"+str(rbm.batch_size) + ".png")
+    plt.legend()
+    plt.savefig(filepath)
 
-def plot_3d_array(array):
+def plot_3d_array(array, filepath):
     array=array.T
     # Get array dimensions
     rows, cols = array.shape
@@ -229,5 +229,7 @@ def plot_3d_array(array):
     # Set plot title
     ax.set_title('Probabilities of labels for an image during recognition')
     
+    plt.savefig(filepath)
+
     plt.show()
-    plt.savefig("out/dbn/label_values.png")
+    

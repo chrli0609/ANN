@@ -57,6 +57,7 @@ class DeepBeliefNet():
         self.print_period = 2000
 
         self.label_values = np.zeros((self.n_gibbs_recog+1, self.rbm_stack["pen+lbl--top"].n_labels))
+
         
         return
 
@@ -194,7 +195,7 @@ class DeepBeliefNet():
             
             records.append( [ ax.imshow(vis.reshape(self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True, interpolation=None) ] )
             
-        anim = stitch_video(fig,records).save("out/dbn/%s.generate%d.mp4"%(name,np.argmax(true_lbl)))            
+        anim = stitch_video(fig,records).save("out/dbn/generate/%s.generate%d.mp4"%(name,np.argmax(true_lbl)))            
             
         return
 

@@ -6,8 +6,8 @@ from dbn import DeepBeliefNet
 
 import matplotlib.pyplot as plt
 
-N_TRAIN = 600
-N_TEST = 100
+N_TRAIN = 60000
+N_TEST = 10000
 BATCH_SIZE = 20
 N_ITERATIONS = 20
 
@@ -34,8 +34,8 @@ if __name__ == "__main__":
     #rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS, plot=True, plot_title=True, visualize_w=True)
     rbm.cd1(visible_trainset=train_imgs, n_iterations=N_ITERATIONS)
 
-    '''plot_weight_change(rbm)
-    plot_loss(rbm)
+    plot_weight_change(rbm)
+    plot_loss(rbm, "out/rbm/loss/" + "mse_loss_"+str(rbm.batch_size) + ".png", "rbm_200_hidden_units")
 
     plt.clf()
 
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     plt.clf()
     plt.cla()
-    plt.close()'''
+    plt.close()
     
     ''' deep- belief net '''
 
@@ -65,9 +65,15 @@ if __name__ == "__main__":
 
     dbn.train_greedylayerwise(vis_trainset=train_imgs, lbl_trainset=train_lbls, n_iterations=N_ITERATIONS)
 
+    plot_loss(dbn.rbm_stack["vis--hid"], "out/dbn/recon_loss/" + "vis--hid_mse_loss_"+str(rbm.batch_size) + ".png", "vis--hid")
+    plot_loss(dbn.rbm_stack["hid--pen"], "out/dbn/recon_loss/" + "hid--pen_mse_loss_"+str(rbm.batch_size) + ".png", "hid--pen")
+    plot_loss(dbn.rbm_stack["pen+lbl--top"], "out/dbn/recon_loss/" + "pen+lbl--top_mse_loss_"+str(rbm.batch_size) + ".png", "pen+lbl--top")
+    plt.close()
+
+
     dbn.recognize(train_imgs, train_lbls)
 
-    plot_3d_array(dbn.label_values)
+    plot_3d_array(dbn.label_values, "out/dbn/label_values/label_values.png")
     
     dbn.recognize(test_imgs, test_lbls)
 
